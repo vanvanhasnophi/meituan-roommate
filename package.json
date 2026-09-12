@@ -21,7 +21,8 @@
     "test:colors": "node test/colors.test.mjs",
     "test:dom": "node test/live.test.mjs",
     "test:theme": "node test/theme.test.mjs",
-    "test:hover": "node test/hover.test.mjs"
+    "test:hover": "node test/hover.test.mjs",
+    "test:fast": "npm run lint && npm run test:logic && npm run test:api && npm run test:colors"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",

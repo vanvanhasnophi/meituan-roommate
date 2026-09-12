@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { activeMembers, clone, todayStr, uid, type Transfer } from '../../shared/logic';
+import { activeMembers, clone, todayStr, uid } from '../../shared/logic';
 import { createSeedState } from '../../shared/seed';
 import type {
   ActivityKind,
@@ -20,7 +20,9 @@ import type {
 } from '../../shared/types';
 import { DEFAULT_CODE, fetchHousehold, pushHousehold, resetHousehold, type StorageDriver } from '../lib/api';
 
-const LS_KEY = 'tongwu.household.v2';
+const LS_KEY = 'tongwu.household.v3';
+/** 与 api/_lib/store.ts 的 SCHEMA_VERSION 保持一致 */
+const SCHEMA_VERSION = 2;
 
 export type SyncStatus = 'idle' | 'saving' | 'saved' | 'offline';
 
@@ -50,8 +52,6 @@ interface Store {
   addExpense: (input: NewExpense) => void;
   updateExpense: (id: ID, patch: Partial<Expense>) => void;
   removeExpense: (id: ID) => void;
-  settleTransfer: (t: Transfer) => void;
-  undoLastSettlement: () => void;
 
   completeChore: (key: string) => void;
   reopenChore: (key: string) => void;
@@ -63,8 +63,12 @@ interface Store {
   addSupply: (input: NewSupply) => void;
   updateSupply: (id: ID, patch: Partial<Supply>) => void;
   removeSupply: (id: ID) => void;
-  consumeSupply: (id: ID, qty: number, memberId?: ID) => void;
-  restockSupply: (id: ID, input: { qty: number; cost: number; paidBy: ID; note?: string }) => void;
+  /** 报告还剩多少（一个采样点，用于推算消耗速率） */
+  reportRemaining: (id: ID, qty: number, memberId?: ID) => void;
+  /** 报告用完 —— 独立动作，一键完成 */
+  reportEmpty: (id: ID, memberId?: ID) => void;
+  /** 补货：记录本次采购量与时间，可带花费自动生成 AA 账单 */
+  restockSupply: (id: ID, input: { qty: number | null; cost: number; paidBy: ID; note?: string }) => void;
 
   proposePact: (input: { title: string; category: PactCategory; content: string }) => void;
   votePact: (id: ID, vote: VoteValue, comment?: string) => void;
@@ -79,7 +83,6 @@ export interface NewExpense {
   title: string;
   amount: number;
   category: ExpenseCategory;
-  paidBy: ID;
   date: DateStr;
   splitMode: SplitMode;
   participants: SplitEntry[];
@@ -93,9 +96,7 @@ export interface NewSupply {
   category: SupplyCategory;
   unit: string;
   stock: number;
-  lowStockThreshold: number;
-  capacity: number;
-  cycleDays?: number | null;
+  alertDays?: number;
   note?: string;
 }
 
@@ -107,6 +108,8 @@ function readLocal(): HouseholdState | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as HouseholdState;
     if (!parsed || !Array.isArray(parsed.members)) return null;
+    // 旧数据模型（账单带 paidBy / 物品带 capacity）直接作废，用新种子
+    if (parsed.schemaVersion !== SCHEMA_VERSION) return null;
     return parsed;
   } catch {
     return null;
@@ -183,6 +186,14 @@ export const useStore = create<Store>((set, get) => {
 
       const remote = await fetchHousehold(local?.code ?? DEFAULT_CODE);
       const remoteState = remote.state;
+
+      // 远端若是旧模型，当作没有数据，走下面的重新播种
+      if (remoteState && remoteState.schemaVersion !== SCHEMA_VERSION) {
+        set({ ready: true, driver: remote.driver, hint: remote.hint, sync: 'saving' });
+        const res = await pushHousehold(get().state);
+        set({ sync: res.ok ? 'saved' : 'offline', driver: res.ok ? res.driver : 'local' });
+        return;
+      }
 
       if (remoteState) {
         const localTime = local ? Date.parse(local.updatedAt || local.createdAt || '') || 0 : 0;
@@ -262,7 +273,6 @@ export const useStore = create<Store>((set, get) => {
             title: input.title,
             amount: input.amount,
             category: input.category,
-            paidBy: input.paidBy,
             date: input.date,
             splitMode: input.splitMode,
             participants: input.participants,
@@ -295,42 +305,6 @@ export const useStore = create<Store>((set, get) => {
           d.supplyLogs = d.supplyLogs.map((l) => (l.expenseId === id ? { ...l, expenseId: undefined } : l));
         },
         { kind: 'expense', text: `删除了账单「${title}」` },
-      );
-    },
-
-    settleTransfer(t) {
-      const id = uid('s');
-      const from = memberName(t.fromId);
-      const to = memberName(t.toId);
-      commit(
-        (d) => {
-          d.settlements.unshift({
-            id,
-            fromId: t.fromId,
-            toId: t.toId,
-            amount: t.amount,
-            date: todayStr(),
-            note: '按最优结算方案结清',
-            createdAt: new Date().toISOString(),
-          });
-        },
-        { kind: 'settlement', text: `${from} 转账给 ${to} ¥${t.amount.toFixed(2)}`, memberId: t.fromId },
-      );
-    },
-
-    undoLastSettlement() {
-      commit(
-        (d) => {
-          const last = d.settlements[0];
-          if (last) {
-            d.settlements = d.settlements.slice(1);
-            d.activity = [
-              ...d.activity,
-              { id: uid('a'), kind: 'settlement', text: `撤销了一笔转账记录`, at: new Date().toISOString() },
-            ];
-          }
-        },
-        { kind: 'settlement', text: '撤销了最近一笔转账记录' },
       );
     },
 
@@ -447,12 +421,10 @@ export const useStore = create<Store>((set, get) => {
             category: input.category,
             unit: input.unit,
             stock: input.stock,
-            lowStockThreshold: input.lowStockThreshold,
-            capacity: Math.max(input.capacity, input.stock, 1),
-            cycleDays: input.cycleDays ?? null,
             lastRestockedAt: todayStr(),
+            lastRestockQty: input.stock,
+            alertDays: input.alertDays ?? 3,
             note: input.note,
-            defaultSplit: 'even',
           });
         },
         { kind: 'supply', text: `登记了新的公共物品「${input.name}」` },
@@ -477,37 +449,61 @@ export const useStore = create<Store>((set, get) => {
       );
     },
 
-    consumeSupply(id, qty, memberId) {
+    reportRemaining(id, qty, memberId) {
       const st = get().state;
       const supply = st.supplies.find((s) => s.id === id);
-      if (!supply || qty <= 0) return;
+      if (!supply) return;
       const who = memberId ?? st.currentMemberId;
-      const nextStock = Math.max(0, supply.stock - qty);
-      const willAlert = nextStock <= supply.lowStockThreshold;
+      const next = Math.max(0, Math.round(qty));
       commit(
         (d) => {
           const s = d.supplies.find((x) => x.id === id);
-          if (s) s.stock = nextStock;
+          if (s) s.stock = next;
           d.supplyLogs.unshift({
             id: uid('sl'),
             supplyId: id,
-            type: 'consume',
-            qty,
+            type: 'report',
+            qty: next,
             memberId: who,
             date: todayStr(),
             createdAt: new Date().toISOString(),
           });
         },
-        { kind: 'supply', text: `${memberName(who)} 用了 ${qty} ${supply.unit}${supply.name}`, memberId: who },
+        { kind: 'supply', text: `${memberName(who)} 报告 ${supply.name} 还剩 ${next} ${supply.unit}`, memberId: who },
       );
-      if (willAlert) {
-        get().showToast(`${supply.name} 库存偏低，记得补货 🛒`, 'warn', {
-          label: '去补货',
-          run: () => {
-            window.location.hash = '#/supplies';
-          },
-        });
-      }
+      get().showToast(
+        next === 0 ? `${supply.name} 记为已用完` : `已记录：还剩 ${next} ${supply.unit}`,
+        next === 0 ? 'warn' : 'success',
+      );
+    },
+
+    reportEmpty(id, memberId) {
+      const st = get().state;
+      const supply = st.supplies.find((s) => s.id === id);
+      if (!supply) return;
+      const who = memberId ?? st.currentMemberId;
+      commit(
+        (d) => {
+          const s = d.supplies.find((x) => x.id === id);
+          if (s) s.stock = 0;
+          d.supplyLogs.unshift({
+            id: uid('sl'),
+            supplyId: id,
+            type: 'empty',
+            qty: 0,
+            memberId: who,
+            date: todayStr(),
+            createdAt: new Date().toISOString(),
+          });
+        },
+        { kind: 'supply', text: `${memberName(who)} 报告 ${supply.name} 已用完`, memberId: who },
+      );
+      get().showToast(`${supply.name} 已用完，记得补货 🛒`, 'warn', {
+        label: '去补货',
+        run: () => {
+          window.location.hash = '#/supplies';
+        },
+      });
     },
 
     restockSupply(id, { qty, cost, paidBy, note }) {
@@ -520,15 +516,16 @@ export const useStore = create<Store>((set, get) => {
         (d) => {
           const s = d.supplies.find((x) => x.id === id);
           if (s) {
-            s.stock = s.stock + qty;
+            if (qty !== null) s.stock = s.stock + qty;
             s.lastRestockedAt = todayStr();
-            s.capacity = Math.max(s.capacity, s.stock, 1);
+            // 采购量每次都可能不同，只记「这一次买了多少」，不做满配
+            s.lastRestockQty = qty;
           }
           d.supplyLogs.unshift({
             id: uid('sl'),
             supplyId: id,
             type: 'restock',
-            qty,
+            qty: qty ?? 0,
             memberId: paidBy,
             date: todayStr(),
             cost: cost > 0 ? cost : undefined,
@@ -542,11 +539,10 @@ export const useStore = create<Store>((set, get) => {
               title: `公共物品补货 · ${supply.name}`,
               amount: cost,
               category: 'supply',
-              paidBy,
               date: todayStr(),
               splitMode: 'even',
               participants: sharers,
-              source: { type: 'supply', id, label: `${supply.name} ×${qty}${supply.unit}` },
+              source: { type: 'supply', id, label: qty === null ? supply.name : `${supply.name} ×${qty}${supply.unit}` },
               createdBy: d.currentMemberId,
               createdAt: new Date().toISOString(),
             });
@@ -556,8 +552,8 @@ export const useStore = create<Store>((set, get) => {
           kind: 'supply',
           text:
             cost > 0
-              ? `${memberName(paidBy)} 补货 ${supply.name} ×${qty}，并自动生成 ¥${cost.toFixed(2)} 的 AA 账单`
-              : `${memberName(paidBy)} 补货 ${supply.name} ×${qty}`,
+              ? `${memberName(paidBy)} 补货${qty === null ? '' : ` ${qty} ${supply.unit}`} ${supply.name}，并自动生成 ¥${cost.toFixed(2)} 的 AA 账单`
+              : `${memberName(paidBy)} 补货${qty === null ? '' : ` ${qty} ${supply.unit}`} ${supply.name}`,
           memberId: paidBy,
         },
       );

@@ -9,7 +9,6 @@ import {
   Package,
   ScrollText,
   Sparkles,
-  TrendingUp,
   Vote,
 } from 'lucide-react';
 import { useMemo } from 'react';
@@ -18,17 +17,17 @@ import {
   activeAlerts,
   activeMembers,
   choreStats,
-  computeBalances,
+  computeOwed,
   formatMoney,
-  formatSigned,
   friendlyDate,
   memberById,
   monthExpenses,
+  supplyHeadline,
+  supplySubline,
   monthKey,
   occurrencesOn,
   pactProgress,
   parseDate,
-  settlePlan,
   startOfMonth,
   todayStr,
   WEEKDAY_LABELS,
@@ -48,9 +47,8 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
   const month = monthKey(today);
 
   const data = useMemo(() => {
-    const balances = computeBalances(state, month);
-    const myBalance = balances[me?.id ?? ''] ?? { net: 0, paid: 0, owed: 0 };
-    const plan = settlePlan(balances);
+    const owed = computeOwed(state, month);
+    const myOwed = owed[me?.id ?? ''] ?? 0;
     const monthList = monthExpenses(state, month);
     const total = monthList.reduce((s, e) => s + e.amount, 0);
 
@@ -60,7 +58,6 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
     const myStats = stats[me?.id ?? ''] ?? { done: 0, pending: 0, skipped: 0, rate: 1, points: 0 };
     const alerts = activeAlerts(state, today);
 
-    const myTransfers = plan.filter((t) => t.fromId === me?.id || t.toId === me?.id);
     const pendingSwaps = Object.entries(state.choreOverrides).filter(
       ([, ov]) => ov.swapRequest && ov.swapRequest.toMemberId === me?.id,
     );
@@ -69,16 +66,14 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
     );
 
     return {
-      balances,
-      myBalance,
-      plan,
+      owed,
+      myOwed,
       monthList,
       total,
       todayChores,
       myChores,
       myStats,
       alerts,
-      myTransfers,
       pendingSwaps,
       votablePacts,
       monthCount: monthList.length,
@@ -129,7 +124,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
       tone: 'warn',
     });
   }
-  const lowSupplies = data.alerts.filter((a) => a.level === 'out' || a.level === 'low');
+  const lowSupplies = data.alerts;
   if (lowSupplies.length > 0) {
     todos.push({
       id: 'supply',
@@ -212,10 +207,10 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
           icon={<CircleDollarSign size={16} />}
         />
         <StatTile
-          label={data.myBalance.net >= 0 ? '我应收' : '我应付'}
-          value={formatMoney(Math.abs(data.myBalance.net))}
-          sub={data.myBalance.net >= 0 ? '室友需要转给我' : '需要在结算日转出'}
-          tone={data.myBalance.net >= 0 ? 'accent' : 'brand'}
+          label="我应承担"
+          value={formatMoney(data.myOwed)}
+          sub={`由账单分摊规则累计 · 每月 ${state.settleDay} 日结算`}
+          tone="accent"
           icon={<HandCoins size={16} />}
         />
         <StatTile
@@ -310,62 +305,35 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
             }
           />
           <div className="rounded-card border border-line-blur bg-brand-50 p-4">
-            <p className="text-[12.5px] text-ink-mute">
-              {data.myBalance.net >= 0 ? '本月你垫付多于应付，应收回' : '本月你应付多于垫付，应转出'}
-            </p>
-            <p
-              className={cn(
-                'num mt-1 text-[28px] font-semibold tracking-tight',
-                data.myBalance.net >= 0 ? 'text-pos-600' : 'text-brand-600',
-              )}
-            >
-              {formatSigned(data.myBalance.net)}
+            <p className="text-[12.5px] text-ink-mute">本月按分摊规则，我应承担</p>
+            <p className="num mt-1 text-[28px] font-semibold tracking-tight text-brand-700">
+              {formatMoney(data.myOwed)}
             </p>
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-ink-mute">
               <span>
-                我垫付 <span className="num font-medium text-ink-soft">{formatMoney(data.myBalance.paid)}</span>
+                本月总支出 <span className="num font-medium text-ink-soft">{formatMoney(data.total)}</span>
               </span>
               <span>
-                我应付 <span className="num font-medium text-ink-soft">{formatMoney(data.myBalance.owed)}</span>
+                我的占比{' '}
+                <span className="num font-medium text-ink-soft">
+                  {data.total > 0 ? Math.round((data.myOwed / data.total) * 100) : 0}%
+                </span>
               </span>
             </div>
           </div>
 
           <div className="mt-4">
             <p className="mb-2 flex items-center gap-1.5 text-[13px] font-medium text-ink-soft">
-              <TrendingUp size={14} className="text-brand-500" /> 最优结算方案
-              {data.plan.length > 0 ? <Chip className="bg-tint text-ink-mute">只需 {data.plan.length} 笔转账</Chip> : null}
+              <HandCoins size={14} className="text-brand-500" /> 结算计算器
             </p>
-            {data.plan.length === 0 ? (
-              <p className="rounded-xl bg-pos-50 px-3 py-4 text-center text-[13px] text-pos-700">
-                本期账目已平，谁都不欠谁 🎉
-              </p>
-            ) : (
-              <div className="space-y-1.5">
-                {(data.myTransfers.length > 0 ? data.myTransfers : data.plan.slice(0, 2)).map((t, i) => {
-                  const from = memberById(state, t.fromId);
-                  const to = memberById(state, t.toId);
-                  const involvesMe = t.fromId === me?.id || t.toId === me?.id;
-                  return (
-                    <div
-                      key={`${t.fromId}-${t.toId}-${i}`}
-                      className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-line bg-comp px-3 py-2 text-[13px]"
-                    >
-                      <Avatar member={from} size="xs" />
-                      <span className="min-w-0 truncate font-medium">{from?.name}</span>
-                      <ArrowRight size={13} className="shrink-0 text-ink-mute" />
-                      <Avatar member={to} size="xs" />
-                      <span className="min-w-0 truncate font-medium">{to?.name}</span>
-                      <span className="num ml-auto font-semibold text-brand-600">{formatMoney(t.amount)}</span>
-                      {involvesMe ? <Chip className="bg-brand-100 text-brand-700">涉及我</Chip> : null}
-                    </div>
-                  );
-                })}
-                {data.myTransfers.length === 0 ? (
-                  <p className="pt-1 text-[12px] text-ink-mute">以上是与本期结算相关的转账，与你无关的已省略。</p>
-                ) : null}
-              </div>
-            )}
+            <p className="rounded-card bg-tint px-3 py-3 text-[12.5px] leading-relaxed text-ink-mute">
+              账单只说清「这笔支出怎么分摊」。谁垫了钱在结算时一次性录进去 ——
+              因为<b className="font-medium text-ink-soft">谁记的账不等于谁付的钱</b>，
+              算完直接给出最少的转账笔数。
+            </p>
+            <Button variant="ghost" size="xs" className="mt-2" onClick={() => onNavigate('expenses')}>
+              打开计算器 <ArrowRight size={13} />
+            </Button>
           </div>
         </Card>
       </div>
@@ -394,16 +362,10 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
                   <span className="text-lg">{a.supply.emoji}</span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[14px] font-medium">{a.supply.name}</p>
-                    <p className="text-[12px] text-ink-mute">
-                      剩 {a.supply.stock} {a.supply.unit}
-                      {a.daysLeft !== null ? ` · 预计还能用 ${a.daysLeft} 天` : ''}
-                      {a.dueForReplacement ? ' · 已到更换周期' : ''}
-                    </p>
+                    <p className="text-[12px] text-ink-mute">{supplySubline(a)}</p>
                   </div>
-                  <Chip
-                    color={a.level === 'out' ? 'var(--danger-500)' : a.level === 'due' ? 'var(--warn-500)' : 'var(--brand-600)'}
-                  >
-                    {a.level === 'out' ? '已用完' : a.level === 'due' ? '该更换' : '偏低'}
+                  <Chip color={a.level === 'out' ? 'var(--danger-500)' : 'var(--brand-600)'}>
+                    {supplyHeadline(a)}
                   </Chip>
                 </div>
               ))}

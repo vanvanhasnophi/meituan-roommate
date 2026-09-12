@@ -2,22 +2,24 @@
 
 /** 主题令牌 → Tailwind 颜色。带 -rgb 三元组的支持 /alpha 透明度修饰符 */
 const solid = (name) => `rgb(var(--${name}-rgb) / <alpha-value>)`;
-/** 令牌本身已是半透明色（如细线、悬停底），默认用原值，只有显式写 /alpha 时才换算 */
-const translucent = (name, triplet) => ({ opacityValue }) =>
-  opacityValue === undefined ? `var(--${name})` : `rgb(var(${triplet}) / ${opacityValue})`;
 
 const scale = (prefix, keys) =>
   Object.fromEntries(keys.map((k) => [k, solid(`${prefix}-${k}`)]));
 
-/* ── 中性/着色的「半透明底」─────────────────────────────────
- * tint / tint-strong：静态细微填充，本身就是 color-mix 出来的半透明色，
- *   不需要再调 alpha（写成 bg-tint/70 无效，也从未这样用过）。
- * neutral-tint / brand-tint / danger-tint：可调 alpha 的实色，
- *   专门给 hover 用 —— hover 一律写 /25，得到 --tw-bg-opacity: 0.25。
+/* ── 半透明底的两种做法 ────────────────────────────────────
+ * 1) 静态细微填充 tint / tint-strong
+ *    值是现算的 color-mix，本身即半透明，不需要再调 alpha
+ *    （写成 bg-tint/70 不生效，代码里也从未这样用）。
+ * 2) hover 底 neutral-tint / brand-tint / danger-tint
+ *    值是可调 alpha 的实色，悬停时在标记里写 /25。
+ *
+ * 为什么 hover 的 0.25 不抽成常量：Tailwind 是靠扫描源码里的
+ * **字面类名** 生成 CSS 的，写成 `hover:bg-neutral-tint/${HOVER_TINT}`
+ * 扫不到，类不会生成。所以这个值只能落在标记里，
+ * 由 test/theme.test.mjs 与 test/hover.test.mjs 断言钉住。
  */
 const STATIC_TINT = 8;
 const STATIC_TINT_STRONG = 14;
-const HOVER_TINT = 25;
 
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
@@ -32,13 +34,15 @@ export default {
         surface: 'var(--glass)',
         glass: solid('glass'),
         comp: solid('comp-bg'),
-        line: translucent('line', '--line-rgb'),
+        /* --line 本身已是半透明细线色，代码里从未写 border-line/<alpha>，
+           所以直接用 var，不需要再走一层 alpha 变量 */
+        line: 'var(--line)',
         'line-blur': 'var(--line-blur)',
         overlay: 'var(--overlay)',
         /* 交互填充（替代原先的 bg-black/[0.04] 一类硬编码） */
         tint: `color-mix(in srgb, var(--bg-offset) ${STATIC_TINT}%, transparent)`,
         'tint-strong': `color-mix(in srgb, var(--bg-offset) ${STATIC_TINT_STRONG}%, transparent)`,
-        /* hover 专用：配合 /25 使用，得到 --tw-bg-opacity: 0.25 */
+        /* hover 专用：标记里写 /25 */
         'neutral-tint': solid('bg-offset'),
         'brand-tint': solid('brand-500'),
         'danger-tint': solid('danger-500'),

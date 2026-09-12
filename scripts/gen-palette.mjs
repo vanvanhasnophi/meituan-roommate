@@ -112,6 +112,8 @@ const dark = (() => {
   };
   const danger = {
     50: mix(hslToHex(352, 72, 68), compBg, 0.16),
+    // 深色下 300 用作描边：比 500 更沉一档，压得住又不刺眼
+    300: hslToHex(352, 56, 48),
     500: hslToHex(352, 72, 68),
     700: hslToHex(352, 76, 80),
   };

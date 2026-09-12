@@ -109,122 +109,51 @@ function buildOverrides(tasks: ChoreTask[], today: DateStr): Record<string, Chor
 }
 
 function buildSupplies(today: DateStr): Supply[] {
+  // 只记「上次补货时间 / 数量」和「最近报告的剩余」，
+  // 剩余天数由这两者推算，不再维护满配与精确出入库。
+  const mk = (
+    id: string,
+    name: string,
+    emoji: string,
+    category: Supply['category'],
+    unit: string,
+    stock: number,
+    restockDaysAgo: number | null,
+    restockQty: number | null,
+    note?: string,
+  ): Supply => ({
+    id,
+    name,
+    emoji,
+    category,
+    unit,
+    stock,
+    lastRestockedAt: restockDaysAgo === null ? null : addDays(today, -restockDaysAgo),
+    lastRestockQty: restockQty,
+    alertDays: 3,
+    note,
+  });
+
+  // 每件都给出自洽的「补货时间 + 采购量 + 历次报告」，
+  // 这样界面上每张卡片都能显示一个算得出来的天数，而不是一片「数据不足」。
   return [
-    {
-      id: 's1',
-      name: '卷纸',
-      emoji: '🧻',
-      category: '日用',
-      unit: '卷',
-      stock: 3,
-      lowStockThreshold: 6,
-      capacity: 24,
-      cycleDays: null,
-      lastRestockedAt: addDays(today, -18),
-      defaultSplit: 'even',
-      note: '放在玄关储物柜第二层',
-    },
-    {
-      id: 's2',
-      name: '洗洁精',
-      emoji: '🧴',
-      category: '厨房',
-      unit: '瓶',
-      stock: 1,
-      lowStockThreshold: 1,
-      capacity: 4,
-      lastRestockedAt: addDays(today, -40),
-      defaultSplit: 'even',
-    },
-    {
-      id: 's3',
-      name: '洗衣液',
-      emoji: '🫧',
-      category: '清洁',
-      unit: '袋',
-      stock: 2,
-      lowStockThreshold: 1,
-      capacity: 4,
-      lastRestockedAt: addDays(today, -12),
-      defaultSplit: 'even',
-    },
-    {
-      id: 's4',
-      name: '垃圾袋',
-      emoji: '🗑️',
-      category: '日用',
-      unit: '包',
-      stock: 5,
-      lowStockThreshold: 2,
-      capacity: 10,
-      lastRestockedAt: addDays(today, -21),
-      defaultSplit: 'even',
-    },
-    {
-      id: 's5',
-      name: '厨房纸',
-      emoji: '🧽',
-      category: '厨房',
-      unit: '卷',
-      stock: 0,
-      lowStockThreshold: 2,
-      capacity: 8,
-      lastRestockedAt: addDays(today, -33),
-      defaultSplit: 'even',
-      note: '陈屿上次说这周补',
-    },
-    {
-      id: 's6',
-      name: '净水器滤芯',
-      emoji: '💧',
-      category: '耗材',
-      unit: '支',
-      stock: 1,
-      lowStockThreshold: 1,
-      capacity: 2,
-      cycleDays: 90,
-      lastRestockedAt: addDays(today, -96),
-      defaultSplit: 'even',
-      note: '建议 3 个月更换一次',
-    },
-    {
-      id: 's7',
-      name: '消毒液',
-      emoji: '🧪',
-      category: '清洁',
-      unit: '瓶',
-      stock: 1,
-      lowStockThreshold: 1,
-      capacity: 3,
-      lastRestockedAt: addDays(today, -55),
-      defaultSplit: 'even',
-    },
+    mk('s1', '卷纸', '🧻', '日用', '卷', 3, 18, 12, '放在玄关储物柜第二层'),
+    mk('s2', '洗洁精', '🧴', '厨房', '瓶', 1, 40, 2),
+    mk('s3', '洗衣液', '🫧', '清洁', '袋', 1, 12, 2),
+    mk('s4', '垃圾袋', '🗑️', '日用', '包', 1, 21, 10),
+    // 已用完：报告「用完」后库存归零，这是个独立状态
+    mk('s5', '厨房纸', '🧽', '厨房', '卷', 0, 33, 4, '陈屿上次说这周补'),
+    mk('s6', '净水器滤芯', '💧', '耗材', '支', 1, 96, 2, '建议 3 个月更换一次'),
+    mk('s7', '消毒液', '🧪', '清洁', '瓶', 1, 55, 3),
   ];
 }
 
 function buildSupplyLogs(today: DateStr): SupplyLog[] {
   const logs: SupplyLog[] = [];
-  const push = (log: Omit<SupplyLog, 'createdAt'>) => logs.push({ ...log, createdAt: `${log.date}T12:00:00.000Z` });
-  const pattern: { id: string; member: string; every: number; qty: number }[] = [
-    { id: 's1', member: 'm1', every: 3, qty: 1 },
-    { id: 's2', member: 'm2', every: 12, qty: 1 },
-    { id: 's3', member: 'm3', every: 9, qty: 1 },
-    { id: 's4', member: 'm1', every: 6, qty: 1 },
-    { id: 's5', member: 'm2', every: 10, qty: 1 },
-    { id: 's7', member: 'm4', every: 14, qty: 1 },
-  ];
-  for (const p of pattern) {
-    for (let d = 30; d >= 1; d -= p.every) {
-      push({
-        id: `sl_${p.id}_${d}`,
-        supplyId: p.id,
-        type: 'consume',
-        qty: p.qty,
-        memberId: p.member,
-        date: addDays(today, -d),
-      });
-    }
-  }
+  const push = (log: Omit<SupplyLog, 'createdAt'>) =>
+    logs.push({ ...log, createdAt: `${log.date}T12:00:00.000Z` });
+
+  // 补货记录：带上「这一次买了多少」，作为速率的兜底依据
   push({
     id: 'sl_r1',
     supplyId: 's1',
@@ -237,6 +166,16 @@ function buildSupplyLogs(today: DateStr): SupplyLog[] {
     note: '618 囤了一箱',
   });
   push({
+    id: 'sl_r3',
+    supplyId: 's6',
+    type: 'restock',
+    qty: 2,
+    memberId: 'm2',
+    date: addDays(today, -96),
+    cost: 138,
+    note: '换滤芯，一次买了两支',
+  });
+  push({
     id: 'sl_r2',
     supplyId: 's3',
     type: 'restock',
@@ -246,8 +185,45 @@ function buildSupplyLogs(today: DateStr): SupplyLog[] {
     cost: 59.9,
     expenseId: 'e_supply_2',
   });
+
+  // 「报告剩余」的采样点：两次之间就能算出真实消耗速率
+  const reports: { id: string; supplyId: string; member: string; daysAgo: number; qty: number }[] = [
+    { id: 's1', supplyId: 's1', member: 'm1', daysAgo: 16, qty: 11 },
+    { id: 's1', supplyId: 's1', member: 'm1', daysAgo: 9, qty: 7 },
+    { id: 's1', supplyId: 's1', member: 'm4', daysAgo: 3, qty: 3 },
+    { id: 's2', supplyId: 's2', member: 'm2', daysAgo: 26, qty: 2 },
+    { id: 's2', supplyId: 's2', member: 'm2', daysAgo: 6, qty: 1 },
+    { id: 's3', supplyId: 's3', member: 'm3', daysAgo: 10, qty: 2 },
+    { id: 's4', supplyId: 's4', member: 'm1', daysAgo: 18, qty: 8 },
+    { id: 's4', supplyId: 's4', member: 'm1', daysAgo: 5, qty: 2 },
+    { id: 's7', supplyId: 's7', member: 'm4', daysAgo: 20, qty: 2 },
+    { id: 's7', supplyId: 's7', member: 'm4', daysAgo: 7, qty: 1 },
+  ];
+  for (const r of reports) {
+    push({
+      id: `sl_${r.supplyId}_${r.daysAgo}`,
+      supplyId: r.supplyId,
+      type: 'report',
+      qty: r.qty,
+      memberId: r.member,
+      date: addDays(today, -r.daysAgo),
+    });
+  }
+
+  // 「报告用完」是独立动作
+  push({
+    id: 'sl_empty_s5',
+    supplyId: 's5',
+    type: 'empty',
+    qty: 0,
+    memberId: 'm2',
+    date: addDays(today, -1),
+    note: '最后一卷用完了',
+  });
+
   return logs.sort((a, b) => (a.date < b.date ? 1 : -1));
 }
+
 
 function buildExpenses(today: DateStr): Expense[] {
   const thisMonth = startOfMonth(today);
@@ -263,6 +239,8 @@ function buildExpenses(today: DateStr): Expense[] {
   ];
 
   const list: Expense[] = [];
+  // 注意：不记录「谁垫付」—— 记账的人不等于付钱的人。
+  // 垫付在结算时用计算器一次性录入。
   const add = (e: Omit<Expense, 'createdAt'>) => list.push({ ...e, createdAt: `${e.date}T09:00:00.000Z` });
 
   // 上月
@@ -271,7 +249,6 @@ function buildExpenses(today: DateStr): Expense[] {
     title: '房租',
     amount: 6800,
     category: 'rent',
-    paidBy: 'm1',
     date: d(lastMonth, 1),
     splitMode: 'shares',
     participants: rentShares,
@@ -283,7 +260,6 @@ function buildExpenses(today: DateStr): Expense[] {
     title: '水电燃气（上月账期）',
     amount: 386.5,
     category: 'utility',
-    paidBy: 'm2',
     date: d(lastMonth, 8),
     splitMode: 'even',
     participants: even(['m1', 'm2', 'm3']),
@@ -294,7 +270,6 @@ function buildExpenses(today: DateStr): Expense[] {
     title: '宽带续费（年付 1440，按 4 人月摊）',
     amount: 120,
     category: 'internet',
-    paidBy: 'm3',
     date: d(lastMonth, 10),
     splitMode: 'even',
     participants: even(all),
@@ -306,7 +281,6 @@ function buildExpenses(today: DateStr): Expense[] {
     title: '房租',
     amount: 6800,
     category: 'rent',
-    paidBy: 'm1',
     date: d(thisMonth, 1),
     splitMode: 'shares',
     participants: rentShares,
@@ -318,7 +292,6 @@ function buildExpenses(today: DateStr): Expense[] {
     title: '水电燃气',
     amount: 342.6,
     category: 'utility',
-    paidBy: 'm2',
     date: d(thisMonth, 8),
     splitMode: 'even',
     participants: even(all),
@@ -328,7 +301,6 @@ function buildExpenses(today: DateStr): Expense[] {
     title: '周末火锅食材',
     amount: 268,
     category: 'grocery',
-    paidBy: 'm3',
     date: addDays(today, -9),
     splitMode: 'even',
     participants: even(all),
@@ -339,7 +311,6 @@ function buildExpenses(today: DateStr): Expense[] {
     title: '厨房下水道疏通',
     amount: 150,
     category: 'service',
-    paidBy: 'm4',
     date: addDays(today, -6),
     splitMode: 'even',
     participants: even(all),
@@ -349,7 +320,6 @@ function buildExpenses(today: DateStr): Expense[] {
     title: '公共物品补货 · 卷纸',
     amount: 42.8,
     category: 'supply',
-    paidBy: 'm3',
     date: addDays(today, -18),
     splitMode: 'even',
     participants: even(all),
@@ -360,7 +330,6 @@ function buildExpenses(today: DateStr): Expense[] {
     title: '公共物品补货 · 洗衣液',
     amount: 59.9,
     category: 'supply',
-    paidBy: 'm2',
     date: addDays(today, -12),
     splitMode: 'even',
     participants: even(all),
@@ -371,7 +340,6 @@ function buildExpenses(today: DateStr): Expense[] {
     title: '一起囤的牛奶麦片',
     amount: 96.4,
     category: 'grocery',
-    paidBy: 'm1',
     date: addDays(today, -3),
     splitMode: 'custom',
     participants: [
@@ -383,6 +351,7 @@ function buildExpenses(today: DateStr): Expense[] {
   });
   return list.sort((a, b) => (a.date < b.date ? 1 : -1));
 }
+
 
 function buildPacts(today: DateStr): PactArticle[] {
   return [
@@ -481,11 +450,11 @@ function buildActivity(today: DateStr): ActivityEvent[] {
     { id: 'a1', kind: 'pact', memberId: 'm3', text: '对「卫生间早高峰限时」投了反对票，理由是时间太紧', at: `${addDays(today, -1)}T08:20:00.000Z` },
     { id: 'a2', kind: 'supply', memberId: 'm2', text: '厨房纸已用完，触发了补货提醒', at: `${addDays(today, -1)}T19:05:00.000Z` },
     { id: 'a3', kind: 'chore', memberId: 'm1', text: '完成今日值日：垃圾清运 🗑️', at: `${today}T10:05:00.000Z` },
-    { id: 'a4', kind: 'expense', memberId: 'm4', text: '记了一笔「厨房下水道疏通」¥150.00，4 人均分', at: `${addDays(today, -6)}T18:40:00.000Z` },
+    { id: 'a4', kind: 'expense', memberId: 'm4', text: '记了一笔「厨房下水道疏通」¥150.00，4 人均分（垫付在结算时再对齐）', at: `${addDays(today, -6)}T18:40:00.000Z` },
     { id: 'a5', kind: 'pact', memberId: 'm4', text: '发起公约提案「卫生间早高峰限时」', at: `${addDays(today, -2)}T21:30:00.000Z` },
     { id: 'a6', kind: 'chore', memberId: 'm2', text: '发起换班请求，等待周哲确认', at: `${today}T09:12:00.000Z` },
     { id: 'a7', kind: 'supply', memberId: 'm3', text: '补货卷纸 ×12，自动生成 AA 账单 ¥42.80', at: `${addDays(today, -18)}T15:20:00.000Z` },
-    { id: 'a8', kind: 'settlement', memberId: 'm2', text: '给了林小满 ¥1,020.00，上月账期结清', at: `${addMonths(today, -1).slice(0, 8)}02T20:00:00.000Z` },
+    { id: 'a8', kind: 'system', memberId: 'm1', text: '用结算计算器对齐了上月垫付，算出 3 笔转账', at: `${addMonths(today, -1).slice(0, 8)}02T20:00:00.000Z` },
   ];
   return events.sort((a, b) => (a.at < b.at ? 1 : -1));
 }
@@ -494,14 +463,13 @@ export function createSeedState(today: DateStr = todayStr()): HouseholdState {
   const tasks = buildChoreTasks(addDays(today, -21));
   const now = new Date().toISOString();
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     code: 'ROOM-5283',
     name: '望江府 3 幢 1802',
     address: '杭州市上城区 · 近地铁 4 号线',
     settleDay: 25,
     members: MEMBERS,
     expenses: buildExpenses(today),
-    settlements: [],
     choreTasks: tasks,
     choreOverrides: buildOverrides(tasks, today),
     supplies: buildSupplies(today),

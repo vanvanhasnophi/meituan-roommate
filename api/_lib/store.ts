@@ -114,10 +114,15 @@ export async function writeHousehold(
   return { driver: 'libsql', updatedAt };
 }
 
+/** 当前数据模型版本；低于它的存量数据一律重新播种（MVP 阶段不做字段迁移） */
+export const SCHEMA_VERSION = 2;
+
 /** 首次访问自动铺一份演示数据，保证公开链接打开就有内容 */
 export async function ensureHousehold(code: string): Promise<{ state: HouseholdState; driver: StorageDriver }> {
   const existing = await readHousehold(code);
-  if (existing.state) return { state: existing.state, driver: existing.driver };
+  if (existing.state && existing.state.schemaVersion === SCHEMA_VERSION) {
+    return { state: existing.state, driver: existing.driver };
+  }
   const seeded = createSeedState();
   seeded.code = code;
   const { driver } = await writeHousehold(seeded);

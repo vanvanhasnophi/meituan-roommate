@@ -82,6 +82,7 @@
   --warn-500: #4ddb7c;
   --warn-700: #a5e9b9;
   --danger-50: #412e31;
+  --danger-300: #bf3648;
   --danger-500: #e87382;
   --danger-700: #f3a5b0;
 
@@ -144,6 +145,7 @@
   --warn-500-rgb: 77 219 124;
   --warn-700-rgb: 165 233 185;
   --danger-50-rgb: 65 46 49;
+  --danger-300-rgb: 191 54 72;
   --danger-500-rgb: 232 115 130;
   --danger-700-rgb: 243 165 176;
 }

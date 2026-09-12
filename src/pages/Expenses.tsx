@@ -1,10 +1,7 @@
 import {
-  ArrowRight,
-  BadgeCheck,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  CircleDollarSign,
   HandCoins,
   Pencil,
   Plus,
@@ -18,7 +15,7 @@ import { useMemo, useState } from 'react';
 import {
   activeMembers,
   addMonths,
-  computeBalances,
+  computeOwed,
   expenseShares,
   formatMoney,
   formatSigned,
@@ -27,13 +24,14 @@ import {
   monthExpenses,
   monthKey,
   monthLabel,
+  settlementRows,
   settlePlan,
   startOfMonth,
   todayStr,
 } from '../../shared/logic';
 import { EXPENSE_CATEGORIES, SPLIT_MODES } from '../../shared/meta';
 import type { Expense, ExpenseCategory, ID, SplitMode } from '../../shared/types';
-import { Avatar, Button, Card, Chip, EmptyState, Field, Input, MemberPill, Modal, Progress, SectionHeader, Segmented, Textarea, cn, tint } from '../components/ui';
+import { Avatar, Button, Card, Chip, EmptyState, Field, Input, Modal, SectionHeader, Segmented, Textarea, cn, tint } from '../components/ui';
 import { useStore } from '../store/useStore';
 
 const CATEGORY_KEYS = Object.keys(EXPENSE_CATEGORIES) as ExpenseCategory[];
@@ -44,15 +42,44 @@ interface PartDraft {
   weight: number;
 }
 
+/**
+ * 结算草稿：垫付金额只在这里临时保存（localStorage 独立 key），
+ * 不进 HouseholdState —— 账单数据里没有「谁付的钱」这一项。
+ */
+function useSettlementDraft() {
+  const [draft, setDraftState] = useState<{ paid: Record<ID, number> }>(() => {
+    try {
+      const raw = localStorage.getItem(SETTLE_DRAFT_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { paid?: Record<ID, number> };
+        if (parsed?.paid && typeof parsed.paid === 'object') return { paid: parsed.paid };
+      }
+    } catch {
+      /* 忽略损坏的草稿 */
+    }
+    return { paid: {} };
+  });
+  const setDraft = (next: { paid: Record<ID, number> }) => {
+    setDraftState(next);
+    try {
+      localStorage.setItem(SETTLE_DRAFT_KEY, JSON.stringify(next));
+    } catch {
+      /* 隐私模式忽略 */
+    }
+  };
+  return [draft, setDraft] as const;
+}
+
+const SETTLE_DRAFT_KEY = 'tongwu.settle.draft';
+
 export default function Expenses() {
   const state = useStore((s) => s.state);
   const me = state.members.find((m) => m.id === state.currentMemberId) ?? state.members[0];
   const addExpense = useStore((s) => s.addExpense);
   const updateExpense = useStore((s) => s.updateExpense);
   const removeExpense = useStore((s) => s.removeExpense);
-  const settleTransfer = useStore((s) => s.settleTransfer);
-  const undoLastSettlement = useStore((s) => s.undoLastSettlement);
   const showToast = useStore((s) => s.showToast);
+  const [draft, setDraft] = useSettlementDraft();
 
   const [month, setMonth] = useState(() => monthKey(todayStr()));
   const [editing, setEditing] = useState<Expense | null>(null);
@@ -64,18 +91,20 @@ export default function Expenses() {
   const view = useMemo(() => {
     const list = monthExpenses(state, month);
     const total = list.reduce((s, e) => s + e.amount, 0);
-    const balances = computeBalances(state, month);
-    const plan = settlePlan(balances);
+    const owed = computeOwed(state, month);
+    const rows = settlementRows(state.members, owed, draft.paid);
+    const plan = settlePlan(rows);
     const byCategory = CATEGORY_KEYS.map((key) => ({
       key,
       amount: list.filter((e) => e.category === key).reduce((s, e) => s + e.amount, 0),
     }))
       .filter((c) => c.amount > 0)
       .sort((a, b) => b.amount - a.amount);
-    const my = balances[me?.id ?? ''] ?? { net: 0, paid: 0, owed: 0 };
-    const periodSettlements = state.settlements.filter((s) => monthKey(s.date) === month);
-    return { list, total, balances, plan, byCategory, my, periodSettlements };
-  }, [state, month, me?.id]);
+    const mine = rows.find((r) => r.memberId === me?.id) ?? { owed: 0, paid: 0, net: 0, memberId: '' };
+    const paidTotal = rows.reduce((s2, r) => s2 + r.paid, 0);
+    const owedTotal = rows.reduce((s2, r) => s2 + r.owed, 0);
+    return { list, total, owed, rows, plan, byCategory, mine, paidTotal, owedTotal };
+  }, [state, month, me?.id, draft.paid]);
 
   const isCurrentMonth = month === monthKey(today);
 
@@ -85,7 +114,7 @@ export default function Expenses() {
         <div>
           <h2 className="text-[22px] font-semibold tracking-tight">账单与 AA 分摊</h2>
           <p className="mt-1 text-[13px] leading-relaxed text-ink-mute">
-            谁垫付、谁参与、每人该出多少，系统算好；结算时只转最少的几笔钱。
+            记账只记「这笔支出怎么分摊」；垫付的钱在结算计算器里一次性录入，谁记的不等于谁付的。
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -128,139 +157,117 @@ export default function Expenses() {
           <p className="mt-1 text-[12.5px] text-ink-mute">{people.length} 位室友共同承担</p>
         </Card>
         <Card className="card-pad">
-          <span className="text-[13px] font-medium text-ink-mute">我垫付</span>
-          <div className="num mt-2 text-2xl font-semibold tracking-tight text-pos-600">{formatMoney(view.my.paid)}</div>
-          <p className="mt-1 text-[12.5px] text-ink-mute">我该承担 {formatMoney(view.my.owed)}</p>
+          <span className="text-[13px] font-medium text-ink-mute">我应承担</span>
+          <div className="num mt-2 text-2xl font-semibold tracking-tight text-pos-600">{formatMoney(view.mine.owed)}</div>
+          <p className="mt-1 text-[12.5px] text-ink-mute">由账单分摊规则算出，与谁付钱无关</p>
         </Card>
         <Card className="card-pad">
-          <span className="text-[13px] font-medium text-ink-mute">{view.my.net >= 0 ? '我应收' : '我应付'}</span>
+          <span className="text-[13px] font-medium text-ink-mute">垫付对齐</span>
           <div
             className={cn(
               'num mt-2 text-2xl font-semibold tracking-tight',
-              view.my.net >= 0 ? 'text-pos-600' : 'text-brand-600',
+              Math.abs(view.paidTotal - view.owedTotal) < 0.005 ? 'text-pos-600' : 'text-brand-600',
             )}
           >
-            {formatMoney(Math.abs(view.my.net))}
+            {formatMoney(view.paidTotal)}
           </div>
-          <p className="mt-1 text-[12.5px] text-ink-mute">每月 {state.settleDay} 日结算</p>
+          <p className="mt-1 text-[12.5px] text-ink-mute">
+            {Math.abs(view.paidTotal - view.owedTotal) < 0.005
+              ? '已与应承担对齐，可以结算'
+              : `与应承担相差 ${formatMoney(Math.abs(view.paidTotal - view.owedTotal))}`}
+          </p>
         </Card>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1.1fr_1fr]">
-        {/* 结算方案 */}
+        {/* 结算计算器：临时输入垫付，不写入账单数据 */}
         <Card className="card-pad">
           <SectionHeader
-            title="最优结算方案"
-            subtitle="多角债务自动压缩，只保留最少转账笔数"
+            title="结算计算器"
+            subtitle="输入每人这个月垫了多少钱，立刻算出谁该转给谁"
             icon={<HandCoins size={17} />}
-            action={<Chip className="bg-tint text-ink-mute">{view.plan.length} 笔转账</Chip>}
+            action={
+              <button
+                type="button"
+                className="text-[12px] text-ink-mute underline decoration-line underline-offset-2 transition hover:text-ink-soft"
+                onClick={() => setDraft({ paid: {} })}
+              >
+                清空
+              </button>
+            }
           />
-          {view.plan.length === 0 ? (
-            <p className="rounded-xl bg-pos-50 px-3 py-5 text-center text-[13.5px] text-pos-700">
-              本期账目已平，谁都不欠谁 🎉
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {view.plan.map((t, i) => {
-                const from = memberById(state, t.fromId);
-                const to = memberById(state, t.toId);
-                const mine = t.fromId === me?.id;
-                return (
-                  <div key={`${t.fromId}-${t.toId}-${i}`} className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-xl border border-line bg-comp px-3 py-2.5">
-                    <Avatar member={from} size="sm" />
-                    <span className="min-w-0 truncate text-[13.5px] font-medium">{from?.name}</span>
-                    <ArrowRight size={14} className="shrink-0 text-ink-mute" />
-                    <Avatar member={to} size="sm" />
-                    <span className="min-w-0 truncate text-[13.5px] font-medium">{to?.name}</span>
-                    <span className="num ml-auto text-[15px] font-semibold text-brand-600">{formatMoney(t.amount)}</span>
-                    <Button
-                      size="xs"
-                      variant={mine ? 'primary' : 'ghost'}
-                      onClick={() => {
-                        settleTransfer(t);
-                        showToast(`已记录：${from?.name} 转给 ${to?.name} ${formatMoney(t.amount)}`, 'success');
+
+          <div className="space-y-2">
+            {view.rows.map((r) => {
+              const m = memberById(state, r.memberId);
+              const raw = draft.paid[r.memberId];
+              return (
+                <div
+                  key={r.memberId}
+                  className="row flex flex-wrap items-center gap-x-3 gap-y-2 rounded-card border border-line px-3 py-2.5"
+                >
+                  <Avatar member={m} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13.5px] font-medium">
+                      {m?.name}
+                      {m?.id === me?.id ? <span className="ml-1.5 text-[11.5px] text-brand-600">我</span> : null}
+                    </p>
+                    <p className="num text-[11.5px] text-ink-mute">应承担 {formatMoney(r.owed)}</p>
+                  </div>
+                  <label className="flex items-center gap-1.5">
+                    <span className="text-[12px] text-ink-mute">垫付</span>
+                    <Input
+                      className="w-24 py-1.5 text-right text-[13px]"
+                      inputMode="decimal"
+                      placeholder="0"
+                      value={raw === undefined || raw === 0 ? '' : String(raw)}
+                      onChange={(e) => {
+                        const v = Number(e.target.value.replace(/[^\d.]/g, '')) || 0;
+                        setDraft({ paid: { ...draft.paid, [r.memberId]: v } });
                       }}
-                    >
-                      标记已转
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {view.periodSettlements.length > 0 ? (
-            <div className="mt-4 border-t border-line pt-3">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-[13px] font-medium text-ink-soft">本期已结算 {view.periodSettlements.length} 笔</p>
-                <button type="button" className="text-[12px] text-ink-mute underline" onClick={undoLastSettlement}>
-                  撤销最近一笔
-                </button>
-              </div>
-              <div className="space-y-1.5">
-                {view.periodSettlements.slice(0, 3).map((s) => (
-                  <div key={s.id} className="flex items-center gap-2 rounded-lg bg-pos-50/70 px-3 py-2 text-[12.5px] text-pos-700">
-                    <BadgeCheck size={14} />
-                    {memberById(state, s.fromId)?.name} → {memberById(state, s.toId)?.name}
-                    <span className="num ml-auto font-medium">{formatMoney(s.amount)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </Card>
-
-        {/* 分类 + 余额 */}
-        <Card className="card-pad">
-          <SectionHeader title="支出结构" subtitle="看清钱花在哪里，才能谈怎么省" icon={<CircleDollarSign size={17} />} />
-          {view.byCategory.length === 0 ? (
-            <p className="rounded-xl bg-tint px-3 py-5 text-center text-[13px] text-ink-mute">本月还没有账单</p>
-          ) : (
-            <div className="space-y-3">
-              {view.byCategory.map((c) => {
-                const meta = EXPENSE_CATEGORIES[c.key];
-                return (
-                  <div key={c.key}>
-                    <div className="mb-1.5 flex items-center gap-2 text-[13px]">
-                      <span>{meta.emoji}</span>
-                      <span className="font-medium">{meta.label}</span>
-                      <span className="num ml-auto text-ink-mute">
-                        {formatMoney(c.amount)} · {view.total > 0 ? Math.round((c.amount / view.total) * 100) : 0}%
-                      </span>
-                    </div>
-                    <Progress value={view.total > 0 ? c.amount / view.total : 0} color={meta.color} />
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                    />
+                    <span className="text-[12px] text-ink-mute">元</span>
+                  </label>
+                  <span
+                    className={cn(
+                      'num w-20 text-right text-[13.5px] font-medium',
+                      r.net > 0 ? 'text-pos-600' : r.net < 0 ? 'text-brand-600' : 'text-ink-mute',
+                    )}
+                  >
+                    {r.net === 0 ? '—' : formatSigned(r.net)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
 
           <div className="mt-5 border-t border-line pt-4">
             <p className="mb-2.5 flex items-center gap-1.5 text-[13px] font-medium text-ink-soft">
-              <Users size={14} className="text-brand-500" /> 每人净额
+              <Users size={14} className="text-brand-500" /> 每人应承担
             </p>
             <div className="space-y-1.5">
               {state.members.map((m) => {
-                const b = view.balances[m.id];
-                if (!b) return null;
+                const owed = view.owed[m.id] ?? 0;
+                const share = view.total > 0 ? owed / view.total : 0;
                 return (
-                  <div key={m.id} className="flex items-center gap-2.5 rounded-xl px-2 py-1.5">
+                  <div key={m.id} className="flex items-center gap-2.5 rounded-btn px-2 py-1.5">
                     <Avatar member={m} size="sm" />
                     <span className="flex-1 text-[13.5px]">
                       {m.name}
                       {m.id === me?.id ? <span className="ml-1.5 text-[11.5px] text-brand-600">我</span> : null}
                       {m.movedOutAt ? <span className="ml-1.5 text-[11.5px] text-ink-mute">已搬离</span> : null}
                     </span>
-                    <span className="num text-[12px] text-ink-mute">垫付 {formatMoney(b.paid)}</span>
-                    <span
-                      className={cn('num w-20 text-right text-[13.5px] font-medium', b.net >= 0 ? 'text-pos-600' : 'text-brand-600')}
-                    >
-                      {formatSigned(b.net)}
+                    <span className="num text-[12px] text-ink-mute">{Math.round(share * 100)}%</span>
+                    <span className="num w-20 text-right text-[13.5px] font-medium text-ink-soft">
+                      {formatMoney(owed)}
                     </span>
                   </div>
                 );
               })}
             </div>
+            <p className="mt-2 px-2 text-[11.5px] leading-relaxed text-ink-mute">
+              按各笔账单的分摊规则累计，是「谁该出多少」，不是「谁已经出了多少」。
+            </p>
           </div>
         </Card>
       </div>
@@ -324,8 +331,7 @@ export default function Expenses() {
                               {e.source ? <Chip className="bg-brand-50 text-brand-700">来自物品补货</Chip> : null}
                             </div>
                             <p className="mt-0.5 text-[12.5px] text-ink-mute">
-                              {memberById(state, e.paidBy)?.name} 垫付 · {meta.label} ·{' '}
-                              {SPLIT_MODES[e.splitMode].label}
+                              {meta.label} · {SPLIT_MODES[e.splitMode].label}
                               {per !== null ? `（每人 ${formatMoney(per)}）` : ''} · {e.participants.length} 人参与
                             </p>
                             {e.note ? <p className="mt-1 text-[12px] text-ink-mute/90">备注：{e.note}</p> : null}
@@ -423,7 +429,6 @@ function ExpenseModal({
     title: string;
     amount: number;
     category: ExpenseCategory;
-    paidBy: ID;
     date: string;
     splitMode: SplitMode;
     participants: { memberId: ID; weight: number }[];
@@ -432,13 +437,11 @@ function ExpenseModal({
   }) => void;
 }) {
   const state = useStore((s) => s.state);
-  const me = state.members.find((m) => m.id === state.currentMemberId) ?? state.members[0];
   const people = activeMembers(state);
 
   const [title, setTitle] = useState(expense?.title ?? '');
   const [amount, setAmount] = useState(expense ? String(expense.amount) : '');
   const [category, setCategory] = useState<ExpenseCategory>(expense?.category ?? 'grocery');
-  const [paidBy, setPaidBy] = useState<ID>(expense?.paidBy ?? me?.id ?? '');
   const [date, setDate] = useState(expense?.date ?? todayStr());
   const [splitMode, setSplitMode] = useState<SplitMode>(expense?.splitMode ?? 'even');
   const [note, setNote] = useState(expense?.note ?? '');
@@ -462,14 +465,13 @@ function ExpenseModal({
       title,
       amount: amountNum,
       category,
-      paidBy,
       date,
       splitMode,
       participants: selected.map((p) => ({ memberId: p.memberId, weight: p.weight })),
       createdAt: '',
     };
     return expenseShares(pseudo);
-  }, [amountNum, category, date, paidBy, selected, splitMode, title]);
+  }, [amountNum, category, date, selected, splitMode, title]);
 
   const valid = title.trim().length > 0 && amountNum > 0 && selected.length > 0;
 
@@ -492,7 +494,6 @@ function ExpenseModal({
                 title: title.trim(),
                 amount: Number(amountNum.toFixed(2)),
                 category,
-                paidBy,
                 date,
                 splitMode,
                 participants: selected.map((p) => ({
@@ -548,13 +549,6 @@ function ExpenseModal({
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="谁垫付的">
-            <div className="flex flex-wrap gap-2">
-              {people.map((m) => (
-                <MemberPill key={m.id} member={m} active={paidBy === m.id} onClick={() => setPaidBy(m.id)} />
-              ))}
-            </div>
-          </Field>
           <Field label="发生日期" hint={recurring ? '标记为每月账单后，下月可一键复制' : undefined}>
             <div className="flex gap-2">
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -640,7 +634,7 @@ function ExpenseModal({
                 ，每人约 <span className="num font-semibold">{formatMoney(amountNum / selected.length)}</span>
               </>
             ) : null}
-            。金额按「分」做整数运算，不会出现差一分钱的情况。
+            。金额按「分」做整数运算，不会出现差一分钱的情况；这里不记「谁垫付」，垫付在结算计算器里录入。
           </p>
         </div>
       </div>

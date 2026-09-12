@@ -45,8 +45,6 @@ export interface Expense {
   /** 金额，单位：元 */
   amount: number;
   category: ExpenseCategory;
-  /** 垫付人 */
-  paidBy: ID;
   date: DateStr;
   splitMode: SplitMode;
   /** 参与分摊的人；未列出者不参与（如中途搬入/搬出） */
@@ -60,15 +58,10 @@ export interface Expense {
   createdAt: string;
 }
 
-export interface Settlement {
-  id: ID;
-  fromId: ID;
-  toId: ID;
-  amount: number;
-  date: DateStr;
-  note?: string;
-  createdAt: string;
-}
+/* 说明：账单**不记录垫付人**。
+ * 「谁记的」不等于「谁付的」—— 记账的人常常只是代录，
+ * 真正谁垫了钱在结算时一次性输入即可（见 SettlementDraft）。
+ * 这样账单只承担「这笔共同支出怎么分摊」这一件事。 */
 
 /* -------------------------------------------------------------- 清洁值日 */
 
@@ -124,32 +117,43 @@ export interface ChoreOccurrence {
 
 export type SupplyCategory = '清洁' | '厨房' | '日用' | '耗材';
 
+/**
+ * 公共物品：不做出入库台账，只保留三件事 ——
+ *   1. 上一次报告的剩余数量（stock）
+ *   2. 上一次补货的时间与数量（用来估算消耗速率）
+ *   3. 报告流水（每次「还剩几瓶」都是速率的一个采样点）
+ * 没有「满配」概念：采购量每次都可能不同，固定容量只会逼着人填假数据。
+ */
 export interface Supply {
   id: ID;
   name: string;
   emoji: string;
   category: SupplyCategory;
   unit: string;
+  /** 最近一次报告的剩余数量；0 表示已用完 */
   stock: number;
-  /** 低于该值触发补货提醒 */
-  lowStockThreshold: number;
-  /** 满配数量，用于画库存条 */
-  capacity: number;
-  /** 更换周期（天），如滤芯、抹布；到点提醒更换 */
-  cycleDays?: number | null;
+  /** 上一次补货日期，用于估算消耗速率 */
   lastRestockedAt?: DateStr | null;
+  /** 上一次补货数量；采购量会变，所以只记「这一次买了多少」 */
+  lastRestockQty?: number | null;
+  /** 到 N 天内用完就提醒补货，默认 3 */
+  alertDays?: number;
   note?: string;
-  /** 默认分摊方式（补货时带入账单） */
-  defaultSplit: SplitMode;
 }
 
-export type SupplyLogType = 'consume' | 'restock' | 'adjust';
+/**
+ * 物品流水只记三种事实：
+ *   report  报告还剩多少（一个采样点）
+ *   empty   报告用完（独立动作，一键完成）
+ *   restock 补货（可带花费，自动生成 AA 账单）
+ */
+export type SupplyLogType = 'report' | 'empty' | 'restock';
 
 export interface SupplyLog {
   id: ID;
   supplyId: ID;
   type: SupplyLogType;
-  /** 变动数量，正数；consume 表示减少 */
+  /** report=报告的剩余数量；restock=本次采购数量；empty=0 */
   qty: number;
   memberId: ID;
   date: DateStr;
@@ -158,6 +162,13 @@ export interface SupplyLog {
   expenseId?: ID;
   note?: string;
   createdAt: string;
+}
+
+/** 结算计算器的输入：谁垫了多少钱。只存在于前端草稿，不进主数据模型 */
+export interface SettlementDraft {
+  /** memberId → 本期垫付金额（元） */
+  paid: Record<ID, number>;
+  updatedAt: string;
 }
 
 /* -------------------------------------------------------------- 室友公约 */
@@ -221,6 +232,7 @@ export interface ActivityEvent {
 /* -------------------------------------------------------------- 聚合根 */
 
 export interface HouseholdState {
+  /** 2 = 账单去垫付人、物品去满配、结算改为临时计算器 */
   schemaVersion: number;
   /** 邀请码 / 房间码：室友凭此加入同一个「屋」 */
   code: string;
@@ -230,7 +242,6 @@ export interface HouseholdState {
   settleDay: number;
   members: Member[];
   expenses: Expense[];
-  settlements: Settlement[];
   choreTasks: ChoreTask[];
   choreOverrides: Record<string, ChoreOverride>;
   supplies: Supply[];

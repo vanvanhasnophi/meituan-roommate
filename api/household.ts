@@ -11,7 +11,6 @@ const MAX_PAYLOAD = 1_500_000; // 约 1.5MB，足够 MVP 使用
 const REQUIRED_ARRAYS = [
   'members',
   'expenses',
-  'settlements',
   'choreTasks',
   'supplies',
   'supplyLogs',

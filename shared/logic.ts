@@ -12,7 +12,6 @@ import type {
   ID,
   Member,
   Supply,
-  SupplyLog,
 } from './types';
 
 /* ------------------------------------------------------------ 日期工具 */
@@ -151,60 +150,30 @@ export function expenseShares(expense: Expense): Record<ID, number> {
   return out;
 }
 
-export interface MemberBalance {
-  memberId: ID;
-  /** 正数=应收（别人欠他），负数=应付（他欠别人） */
-  net: number;
-  /** 本期总垫付 */
-  paid: number;
-  /** 本期总应付（自己该承担的部分） */
-  owed: number;
-}
-
-/**
- * 计算每个人的净额。默认只统计账期内的账单（含账期内的已结算记录）。
- * 若 month 为 null 则统计全部历史。
- */
-export function computeBalances(
-  state: HouseholdState,
-  month: string | null = null,
-): Record<ID, MemberBalance> {
-  const balances: Record<ID, MemberBalance> = {};
-  const ensure = (id: ID): MemberBalance => {
-    if (!balances[id]) balances[id] = { memberId: id, net: 0, paid: 0, owed: 0 };
-    return balances[id];
-  };
-  state.members.forEach((m) => ensure(m.id));
-
-  const inMonth = (d: DateStr) => (month ? monthKey(d) === month : true);
-
+/** 每人本期「应承担」的金额 —— 完全由账单的分摊规则推出，与谁垫付无关 */
+export function computeOwed(state: HouseholdState, month: string | null = null): Record<ID, number> {
+  const owed: Record<ID, number> = {};
+  state.members.forEach((m) => {
+    owed[m.id] = 0;
+  });
   for (const e of state.expenses) {
-    if (!inMonth(e.date)) continue;
-    const payer = ensure(e.paidBy);
-    payer.paid += e.amount;
-    payer.net += toCents(e.amount);
+    if (month && monthKey(e.date) !== month) continue;
     const shares = expenseShares(e);
     for (const [memberId, amount] of Object.entries(shares)) {
-      const b = ensure(memberId);
-      b.owed += amount;
-      b.net -= toCents(amount);
+      owed[memberId] = toYuan(toCents(owed[memberId] ?? 0) + toCents(amount));
     }
   }
+  return owed;
+}
 
-  for (const s of state.settlements) {
-    if (!inMonth(s.date)) continue;
-    // 转账：付款方债务减轻，收款方债权减少
-    ensure(s.fromId).net += toCents(s.amount);
-    ensure(s.toId).net -= toCents(s.amount);
-  }
-
-  for (const id of Object.keys(balances)) {
-    const b = balances[id];
-    b.net = toYuan(b.net);
-    b.paid = toYuan(toCents(b.paid));
-    b.owed = toYuan(toCents(b.owed));
-  }
-  return balances;
+export interface SettlementRow {
+  memberId: ID;
+  /** 本期应承担（由账单分摊推出） */
+  owed: number;
+  /** 本期实际垫付（结算时人工输入） */
+  paid: number;
+  /** 正数=应收，负数=应付 */
+  net: number;
 }
 
 export interface Transfer {
@@ -214,16 +183,31 @@ export interface Transfer {
 }
 
 /**
- * 最优结算方案：用「最大债权 ↔ 最大债务」贪心配对，
- * 把 n 个人之间的多角债压缩成最少的转账笔数（通常 ≤ n-1 笔）。
+ * 结算计算器：把「每人垫付」与「每人应承担」对账，
+ * 再用「最大债权 ↔ 最大债务」贪心配对，压缩出最少的转账笔数。
+ *
+ * 垫付金额由调用方传入（临时输入），因为账单里不存「谁付的钱」。
  */
-export function settlePlan(balances: Record<ID, MemberBalance>): Transfer[] {
+export function settlementRows(
+  members: Member[],
+  owed: Record<ID, number>,
+  paid: Record<ID, number>,
+): SettlementRow[] {
+  return members.map((m) => {
+    const o = toYuan(toCents(owed[m.id] ?? 0));
+    const p = toYuan(toCents(paid[m.id] ?? 0));
+    return { memberId: m.id, owed: o, paid: p, net: toYuan(toCents(p) - toCents(o)) };
+  });
+}
+
+/** 由净额数组推出最少笔数的转账方案 */
+export function settlePlan(rows: SettlementRow[]): Transfer[] {
   const creditors: { id: ID; cents: number }[] = [];
   const debtors: { id: ID; cents: number }[] = [];
-  for (const b of Object.values(balances)) {
-    const cents = toCents(b.net);
-    if (cents > 0) creditors.push({ id: b.memberId, cents });
-    else if (cents < 0) debtors.push({ id: b.memberId, cents: -cents });
+  for (const r of rows) {
+    const cents = toCents(r.net);
+    if (cents > 0) creditors.push({ id: r.memberId, cents });
+    else if (cents < 0) debtors.push({ id: r.memberId, cents: -cents });
   }
   creditors.sort((a, b) => b.cents - a.cents);
   debtors.sort((a, b) => b.cents - a.cents);
@@ -235,9 +219,7 @@ export function settlePlan(balances: Record<ID, MemberBalance>): Transfer[] {
   while (i < debtors.length && j < creditors.length && guard < 1000) {
     guard += 1;
     const pay = Math.min(debtors[i].cents, creditors[j].cents);
-    if (pay > 0) {
-      transfers.push({ fromId: debtors[i].id, toId: creditors[j].id, amount: toYuan(pay) });
-    }
+    if (pay > 0) transfers.push({ fromId: debtors[i].id, toId: creditors[j].id, amount: toYuan(pay) });
     debtors[i].cents -= pay;
     creditors[j].cents -= pay;
     if (debtors[i].cents === 0) i += 1;
@@ -349,52 +331,129 @@ export function choreStats(
 
 /* ------------------------------------------------------- 物品与提醒 */
 
-export type SupplyAlertLevel = 'ok' | 'low' | 'out' | 'due';
+/**
+ * 物品不需要台账，只需要回答一个问题：**还有几天要用完了？**
+ *
+ * 速率从两个地方推：
+ *   1. 最近两次「报告剩余」的差值（最准）
+ *   2. 上一次补货的数量与时间（补货量 - 当前库存）/ 天数
+ * 两者都没有时，就诚实地显示「数据不足」，而不是编一个数出来。
+ */
+export type SupplyLevel = 'ok' | 'soon' | 'out' | 'unknown';
 
-export interface SupplyInsight {
+export interface SupplyForecast {
   supply: Supply;
-  level: SupplyAlertLevel;
-  /** 预估还能用几天（基于近 30 天消耗速率），无法估算时为 null */
+  level: SupplyLevel;
+  /** 预估还能用几天；数据不足时为 null */
   daysLeft: number | null;
+  /** 预计用完的日期 */
+  runOutDate: DateStr | null;
+  /** 估算用的日均消耗 */
+  dailyUsage: number | null;
+  /** 速率来源，用于在界面上解释这个数是怎么来的 */
+  basis: 'reports' | 'restock' | 'none';
   /** 距上次补货天数 */
   daysSinceRestock: number | null;
-  /** 是否到了更换周期 */
-  dueForReplacement: boolean;
-  dailyUsage: number;
+  /** 是否建议现在补货 */
+  needsRestock: boolean;
 }
 
-export function averageDailyUsage(logs: SupplyLog[], supplyId: ID, today = todayStr()): number {
-  const from = addDays(today, -30);
-  const used = logs
-    .filter((l) => l.supplyId === supplyId && l.type === 'consume' && l.date >= from && l.date <= today)
-    .reduce((s, l) => s + l.qty, 0);
-  return used / 30;
+/** 用两个采样点之间的差值算日均消耗 */
+function rateFromPoints(points: { date: DateStr; qty: number }[]): number | null {
+  if (points.length < 2) return null;
+  const sorted = [...points].sort((a, b) => (a.date < b.date ? -1 : 1));
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  const days = daysBetween(first.date, last.date);
+  const used = first.qty - last.qty;
+  if (days <= 0 || used <= 0) return null;
+  return used / days;
 }
 
-export function supplyInsights(state: HouseholdState, today = todayStr()): SupplyInsight[] {
-  return state.supplies.map((supply) => {
-    const dailyUsage = averageDailyUsage(state.supplyLogs, supply.id, today);
-    const daysLeft = dailyUsage > 0 ? Math.floor(supply.stock / dailyUsage) : null;
-    const daysSinceRestock = supply.lastRestockedAt ? daysBetween(supply.lastRestockedAt, today) : null;
-    const dueForReplacement = Boolean(
-      supply.cycleDays && supply.lastRestockedAt && (daysSinceRestock ?? 0) >= supply.cycleDays,
-    );
-    let level: SupplyAlertLevel = 'ok';
-    // 优先级：用完 > 该更换 > 库存偏低 > 快用完（按消耗速率预估）
-    if (supply.stock <= 0) level = 'out';
-    else if (dueForReplacement) level = 'due';
-    else if (supply.stock <= supply.lowStockThreshold) level = 'low';
-    else if (daysLeft !== null && daysLeft <= 3) level = 'low';
-    return { supply, level, daysLeft, daysSinceRestock, dueForReplacement, dailyUsage };
-  });
+export function supplyForecast(
+  state: HouseholdState,
+  supply: Supply,
+  today = todayStr(),
+): SupplyForecast {
+  const logs = state.supplyLogs.filter((l) => l.supplyId === supply.id);
+  const reports = logs
+    .filter((l) => l.type === 'report' || l.type === 'empty')
+    .map((l) => ({ date: l.date, qty: l.type === 'empty' ? 0 : l.qty }));
+
+  // 没报告过的，用「补货时的当前库存」当作第一天采样点
+  const anchor =
+    supply.lastRestockedAt && supply.lastRestockQty != null
+      ? [{ date: supply.lastRestockedAt, qty: supply.lastRestockQty }, ...reports]
+      : reports;
+
+  const daysSinceRestock = supply.lastRestockedAt ? daysBetween(supply.lastRestockedAt, today) : null;
+  const nowPoint = { date: today, qty: supply.stock };
+
+  // 有真实报告点才算「按报告推」；只有补货基准点时算「按补货量推」
+  let dailyUsage = rateFromPoints([...anchor.filter((p) => p.date < today), nowPoint]);
+  let basis: SupplyForecast['basis'] = reports.length > 0 ? 'reports' : 'restock';
+  if (dailyUsage === null) {
+    // 退回用补货量推算
+    if (supply.lastRestockedAt && supply.lastRestockQty != null && daysSinceRestock && daysSinceRestock > 0) {
+      const used = supply.lastRestockQty - supply.stock;
+      if (used > 0) {
+        dailyUsage = used / daysSinceRestock;
+        basis = 'restock';
+      }
+    }
+    if (dailyUsage === null) basis = 'none';
+  }
+
+  const out = supply.stock <= 0;
+  const daysLeft = out ? 0 : dailyUsage && dailyUsage > 0 ? Math.floor(supply.stock / dailyUsage) : null;
+  const alertDays = supply.alertDays ?? 3;
+
+  let level: SupplyLevel;
+  if (out) level = 'out';
+  else if (daysLeft === null) level = 'unknown';
+  else if (daysLeft <= alertDays) level = 'soon';
+  else level = 'ok';
+
+  return {
+    supply,
+    level,
+    daysLeft,
+    runOutDate: daysLeft === null ? null : addDays(today, daysLeft),
+    dailyUsage,
+    basis,
+    daysSinceRestock,
+    needsRestock: out || (daysLeft !== null && daysLeft <= alertDays),
+  };
 }
 
-/** 触发提醒的条目，按紧急程度排序 */
-export function activeAlerts(state: HouseholdState, today = todayStr()): SupplyInsight[] {
-  const weight: Record<SupplyAlertLevel, number> = { out: 0, due: 1, low: 2, ok: 3 };
-  return supplyInsights(state, today)
-    .filter((i) => i.level !== 'ok')
-    .sort((a, b) => weight[a.level] - weight[b.level] || (a.daysLeft ?? 99) - (b.daysLeft ?? 99));
+export function supplyForecasts(state: HouseholdState, today = todayStr()): SupplyForecast[] {
+  return state.supplies.map((s) => supplyForecast(state, s, today));
+}
+
+/** 需要补货的条目，最紧急的排前面（已用完 > 剩余天数少 > 数据不足） */
+export function activeAlerts(state: HouseholdState, today = todayStr()): SupplyForecast[] {
+  const rank = (f: SupplyForecast) => {
+    if (f.level === 'out') return -1;
+    if (f.daysLeft !== null) return f.daysLeft;
+    return 9999;
+  };
+  return supplyForecasts(state, today)
+    .filter((f) => f.needsRestock)
+    .sort((a, b) => rank(a) - rank(b));
+}
+
+/** 大字号文案：这个物品还有几天要用完 */
+export function supplyHeadline(f: SupplyForecast): string {
+  if (f.level === 'out') return '已用完';
+  if (f.daysLeft === null) return '数据不足';
+  if (f.daysLeft <= 0) return '今天用完';
+  return `${f.daysLeft} 天后需补货`;
+}
+
+/** 小字号文案：库存 */
+export function supplySubline(f: SupplyForecast): string {
+  if (f.level === 'out') return '库存 0';
+  return `库存 ${f.supply.stock} ${f.supply.unit}`;
 }
 
 /* ------------------------------------------------------------ 公约 */
