@@ -46,7 +46,11 @@ export default {
           DEFAULT: 'var(--accent)',
           vivid: 'var(--accent-vivid)',
           bg: 'var(--accent-bg)',
+          fg: 'var(--accent-btn-fg)',
         },
+        /* Tailwind Preflight 的 ::placeholder 取 colors.gray.400，默认写死 #9ca3af，
+           这里换成令牌，placeholder 才会跟着深浅模式翻转 */
+        gray: { 400: 'var(--ink-mute)' },
       },
       fontFamily: {
         sans: ['var(--app-font-stack)'],

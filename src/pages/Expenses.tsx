@@ -597,7 +597,7 @@ function ExpenseModal({
                     }
                     className={cn(
                       'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[11px] transition',
-                      p.on ? 'border-brand-500 bg-brand-500 text-[color:var(--accent-btn-fg)]' : 'border-line bg-comp text-transparent',
+                      p.on ? 'border-brand-500 bg-brand-500 text-accent-fg' : 'border-line bg-comp text-transparent',
                     )}
                   >
                     ✓

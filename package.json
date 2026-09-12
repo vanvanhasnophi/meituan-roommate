@@ -16,7 +16,8 @@
     "test:ui": "node test/ui.test.mjs",
     "test:visual": "node test/visual.test.mjs",
     "test:audit": "node test/audit.test.mjs",
-    "test:all": "npm run lint && npm run test:logic && npm run test:api"
+    "test:all": "npm run lint && npm run test:logic && npm run test:api",
+    "test:live": "node test/live.test.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",

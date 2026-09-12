@@ -51,6 +51,18 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* Tailwind Preflight 把 placeholder 写死成 gray-400 (#9ca3af)，不会随主题翻转，这里接管 */
+  ::placeholder {
+    color: color-mix(in srgb, var(--ink-mute) 78%, transparent);
+    opacity: 1;
+  }
+
+  /* 原生控件（复选框、滚动条等）跟随主题的强调色 */
+  input[type='checkbox'],
+  input[type='radio'] {
+    accent-color: var(--accent);
+  }
+
   ::selection {
     background: color-mix(in srgb, var(--accent) 30%, transparent);
     color: var(--ink);
