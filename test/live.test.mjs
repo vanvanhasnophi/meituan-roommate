@@ -4,7 +4,8 @@
  */
 import { chromium } from 'playwright-core';
 
-const URL_ = process.env.TARGET || 'https://meituan-roommate.vercel.app/room-mate';
+// 默认只测本地（先跑 npm run serve:dist）；需要测线上时传 TARGET=https://...
+const URL_ = process.env.TARGET || 'http://localhost:4173/room-mate';
 const EXE =
   process.env.CHROME_PATH ||
   '/root/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell';
@@ -51,7 +52,7 @@ for (const scheme of ['light', 'dark']) {
     };
   });
 
-  console.log(`\n┌─ 线上 [${scheme}] ─────────────────────────────`);
+  console.log(`\n┌─ ${URL_} [${scheme}] ─────────────────`);
   console.log(`│ 标题          ${info.title}`);
   console.log(`│ data-theme    ${info.theme}`);
   console.log(`│ 页面底色      ${info.bodyBg}   背景图 ${info.bodyImage.slice(0, 24)}`);

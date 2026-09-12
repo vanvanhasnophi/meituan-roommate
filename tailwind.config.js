@@ -78,6 +78,11 @@ export default {
         panel: 'var(--shadow-3)',
         pop: 'var(--glass-inner), var(--shadow-3)',
       },
+      /* Tailwind Preflight 给 * 设了 border-color: theme(borderColor.DEFAULT)，
+         默认是写死的 gray-200 (#e5e7eb)。换成令牌，未显式指定颜色的边框才随主题翻转 */
+      borderColor: {
+        DEFAULT: 'var(--line)',
+      },
       transitionDuration: {
         DEFAULT: '200ms',
       },
