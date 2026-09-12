@@ -305,7 +305,7 @@ export default function Expenses() {
                     const shares = expenseShares(e);
                     const per = e.splitMode === 'even' ? e.amount / Math.max(1, e.participants.length) : null;
                     return (
-                      <div key={e.id} className="group rounded-2xl border border-line bg-comp px-3.5 py-3">
+                      <div key={e.id} className="row group rounded-2xl border border-line px-3.5 py-3">
                         <div className="flex items-start gap-3">
                           <span
                             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg"

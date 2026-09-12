@@ -20,7 +20,8 @@
     "test:live": "node test/live.test.mjs",
     "test:colors": "node test/colors.test.mjs",
     "test:dom": "node test/live.test.mjs",
-    "test:theme": "node test/theme.test.mjs"
+    "test:theme": "node test/theme.test.mjs",
+    "test:hover": "node test/hover.test.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",

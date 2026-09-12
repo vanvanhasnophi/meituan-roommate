@@ -133,6 +133,20 @@
     box-shadow: var(--glass-inner), var(--shadow-2);
   }
 
+  /* 列表行：默认一档实色底，悬停提亮一档 + 描边染上主色。
+     注意：行内的底色由 .row 提供，不要再叠 bg-* 工具类 ——
+     工具类在 utilities 层，优先级高于 components 层，会把 hover 盖掉。 */
+  .row {
+    background-color: var(--comp-bg);
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease;
+  }
+  .row:hover {
+    background-color: var(--comp-bg-alt);
+    border-color: color-mix(in srgb, var(--accent) 32%, transparent);
+  }
+
   /* ── 毛玻璃层：导航 / 侧栏 / 弹层（Chronicle 用 blur(16px)）── */
   .glass-blur {
     background-color: var(--glass-blur);

@@ -122,7 +122,7 @@ export default function Pacts() {
             const myVote = p.votes.find((v) => v.memberId === me?.id);
             const isOpen = expanded === p.id;
             return (
-              <Card key={p.id} className="overflow-hidden">
+              <Card key={p.id} className="interactive overflow-hidden">
                 <div className="card-pad">
                   <div className="flex items-start gap-3">
                     <span

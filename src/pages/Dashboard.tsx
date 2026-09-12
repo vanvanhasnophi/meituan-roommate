@@ -260,12 +260,12 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
                   <div
                     key={o.key}
                     className={cn(
-                      'flex items-center gap-3 rounded-xl border px-3 py-2.5 transition',
+                      'row flex items-center gap-3 rounded-xl border px-3 py-2.5',
                       o.status === 'done'
                         ? 'border-pos-100 bg-pos-50/60'
                         : mine
-                          ? 'border-brand-200 bg-comp'
-                          : 'border-line bg-comp',
+                          ? 'border-brand-200 bg-glass'
+                          : 'row border-line',
                     )}
                   >
                     <span className="text-lg">{task?.emoji}</span>
@@ -390,7 +390,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
           ) : (
             <div className="space-y-2">
               {data.alerts.slice(0, 4).map((a) => (
-                <div key={a.supply.id} className="flex items-center gap-3 rounded-xl border border-line bg-comp px-3 py-2.5">
+                <div key={a.supply.id} className="row flex items-center gap-3 rounded-xl border border-line px-3 py-2.5">
                   <span className="text-lg">{a.supply.emoji}</span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[14px] font-medium">{a.supply.name}</p>

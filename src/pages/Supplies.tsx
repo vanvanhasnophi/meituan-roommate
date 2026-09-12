@@ -142,7 +142,7 @@ export default function Supplies() {
             const ratio = supply.capacity > 0 ? supply.stock / supply.capacity : 0;
             const usage = averageDailyUsage(state.supplyLogs, supply.id, today);
             return (
-              <Card key={supply.id} className="card-pad flex flex-col">
+              <Card key={supply.id} className="card-pad interactive flex flex-col">
                 <div className="flex items-start gap-3">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-tint text-xl">
                     {supply.emoji}
@@ -237,7 +237,7 @@ export default function Supplies() {
               const supply = state.supplies.find((s) => s.id === log.supplyId);
               const who = memberById(state, log.memberId);
               return (
-                <div key={log.id} className="flex items-center gap-3 rounded-xl border border-line bg-comp px-3 py-2.5">
+                <div key={log.id} className="row flex items-center gap-3 rounded-xl border border-line px-3 py-2.5">
                   <span className="text-lg">{supply?.emoji ?? '📦'}</span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[13.5px]">
