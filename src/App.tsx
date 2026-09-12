@@ -106,7 +106,7 @@ export default function App() {
                 onClick={() => navigate(item.key)}
                 className={cn(
                   'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition',
-                  active ? 'bg-glass text-ink shadow-glass' : 'text-ink-soft hover:bg-tint',
+                  active ? 'bg-glass text-ink shadow-glass' : 'text-ink-soft hover:bg-neutral-tint/25',
                 )}
               >
                 <Icon size={18} className={active ? 'text-brand-500' : 'text-ink-mute'} />
@@ -137,7 +137,7 @@ export default function App() {
           <button
             type="button"
             onClick={() => void resetDemo()}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-[12.5px] text-ink-mute transition hover:bg-tint hover:text-ink-soft"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-[12.5px] text-ink-mute transition hover:bg-neutral-tint/25 hover:text-ink-soft"
           >
             <RotateCcw size={14} /> 重置演示数据
           </button>
@@ -213,7 +213,7 @@ export default function App() {
                         }}
                         className={cn(
                           'flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-sm transition',
-                          m.id === me?.id ? 'bg-brand-50 text-brand-700' : 'hover:bg-tint',
+                          m.id === me?.id ? 'bg-brand-50 text-brand-700' : 'hover:bg-neutral-tint/25',
                         )}
                       >
                         <Avatar member={m} size="sm" />
@@ -288,7 +288,7 @@ export default function App() {
             {toast.action ? (
               <button
                 type="button"
-                className="rounded-btn border border-brand-300 bg-brand-50 px-2.5 py-1 text-[12.5px] font-medium text-brand-700 transition hover:bg-brand-100"
+                className="rounded-btn border border-brand-300 bg-brand-50 px-2.5 py-1 text-[12.5px] font-medium text-brand-700 transition hover:bg-brand-tint/25"
                 onClick={() => {
                   toast.action?.run();
                   dismissToast();

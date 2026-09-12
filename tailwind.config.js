@@ -9,6 +9,16 @@ const translucent = (name, triplet) => ({ opacityValue }) =>
 const scale = (prefix, keys) =>
   Object.fromEntries(keys.map((k) => [k, solid(`${prefix}-${k}`)]));
 
+/* ── 中性/着色的「半透明底」─────────────────────────────────
+ * tint / tint-strong：静态细微填充，本身就是 color-mix 出来的半透明色，
+ *   不需要再调 alpha（写成 bg-tint/70 无效，也从未这样用过）。
+ * neutral-tint / brand-tint / danger-tint：可调 alpha 的实色，
+ *   专门给 hover 用 —— hover 一律写 /25，得到 --tw-bg-opacity: 0.25。
+ */
+const STATIC_TINT = 8;
+const STATIC_TINT_STRONG = 14;
+const HOVER_TINT = 25;
+
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   // 主题靠 <html data-theme> 切换；绝大多数样式由 CSS 变量自动翻转，
@@ -26,8 +36,12 @@ export default {
         'line-blur': 'var(--line-blur)',
         overlay: 'var(--overlay)',
         /* 交互填充（替代原先的 bg-black/[0.04] 一类硬编码） */
-        tint: translucent('hover', '--bg-offset-rgb'),
-        'tint-strong': translucent('active', '--bg-offset-rgb'),
+        tint: `color-mix(in srgb, var(--bg-offset) ${STATIC_TINT}%, transparent)`,
+        'tint-strong': `color-mix(in srgb, var(--bg-offset) ${STATIC_TINT_STRONG}%, transparent)`,
+        /* hover 专用：配合 /25 使用，得到 --tw-bg-opacity: 0.25 */
+        'neutral-tint': solid('bg-offset'),
+        'brand-tint': solid('brand-500'),
+        'danger-tint': solid('danger-500'),
         /* 文字三层 */
         ink: {
           DEFAULT: solid('ink'),

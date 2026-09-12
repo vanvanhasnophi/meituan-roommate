@@ -90,21 +90,21 @@ export default function Chores() {
           <div className="flex items-center gap-1 rounded-xl border border-line bg-comp p-1">
             <button
               type="button"
-              className="rounded-lg p-1.5 text-ink-mute transition hover:bg-tint-strong"
+              className="rounded-lg p-1.5 text-ink-mute transition hover:bg-neutral-tint/25"
               onClick={() => setWeekStart((w) => addDays(w, -7))}
             >
               <ChevronLeft size={16} />
             </button>
             <button
               type="button"
-              className="rounded-lg px-2 py-1.5 text-[12.5px] font-medium text-ink-soft transition hover:bg-tint-strong"
+              className="rounded-lg px-2 py-1.5 text-[12.5px] font-medium text-ink-soft transition hover:bg-neutral-tint/25"
               onClick={() => setWeekStart(startOfWeek(today))}
             >
               回到本周
             </button>
             <button
               type="button"
-              className="rounded-lg p-1.5 text-ink-mute transition hover:bg-tint-strong"
+              className="rounded-lg p-1.5 text-ink-mute transition hover:bg-neutral-tint/25"
               onClick={() => setWeekStart((w) => addDays(w, 7))}
             >
               <ChevronRight size={16} />

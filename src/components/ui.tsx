@@ -277,7 +277,7 @@ export function Modal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-ink-mute transition hover:bg-tint-strong hover:text-ink"
+            className="rounded-lg p-1.5 text-ink-mute transition hover:bg-neutral-tint/25 hover:text-ink"
           >
             <X size={18} />
           </button>

@@ -123,7 +123,50 @@ check(
   '（水绿主题的关键：浅色压暗、深色用本色，两套都从 --accent-btn 来）',
 );
 
-console.log('\n[4] 每个变量都必须在深浅两套里都有定义');
+console.log('\n[4] hover 底色的透明度必须是 0.25');
+
+// 深色下再验一遍 hover（浅色已在上面切换前验过）
+await page.goto(`${BASE}/room-mate#/expenses`, { waitUntil: 'load' });
+await page.waitForTimeout(900);
+const hoverSel = 'button.hover\\:bg-neutral-tint\\/25';
+const hoverCount = await page.locator(hoverSel).count();
+check('页面上存在 hover 元素', hoverCount > 0, String(hoverCount));
+if (hoverCount > 0) {
+  const el = page.locator(hoverSel).first();
+  const rest = await el.evaluate((e) => getComputedStyle(e).backgroundColor);
+  await el.hover();
+  await page.waitForTimeout(350);
+  const hovered = await el.evaluate((e) => getComputedStyle(e).backgroundColor);
+  const alpha = Number((hovered.match(/[\d.]+\)$/) ?? ['1)'])[0].replace(')', ''));
+  check(`hover 前是透明底       ${rest}`, /rgba?\([^)]*,\s*0\)/.test(rest), rest);
+  check(`hover 后 alpha = 0.25   ${rest} → ${hovered}`, Math.abs(alpha - 0.25) < 0.001, String(alpha));
+}
+
+// 静态 tint 必须是半透明，而不是实色（曾经踩过：函数式颜色在 Tailwind v3 里
+// 未使用 /alpha 时会拿到 var(--tw-bg-opacity, 1)，渲染成实心灰）
+const staticTint = await page.evaluate(() => {
+  const probe = (c) => {
+    const e = document.createElement('div');
+    e.className = c;
+    document.body.appendChild(e);
+    const v = getComputedStyle(e).backgroundColor;
+    e.remove();
+    return v;
+  };
+  return { tint: probe('bg-tint'), strong: probe('bg-tint-strong') };
+});
+const alphaOf = (c) => {
+  const m = c.match(/\/\s*([\d.]+)\)/) ?? c.match(/,\s*([\d.]+)\)/);
+  return m ? Number(m[1]) : 1;
+};
+check(`静态 bg-tint 是半透明（alpha=${alphaOf(staticTint.tint)}）`, alphaOf(staticTint.tint) < 1, staticTint.tint);
+check(
+  `静态 bg-tint-strong 是半透明（alpha=${alphaOf(staticTint.strong)}）`,
+  alphaOf(staticTint.strong) < 1,
+  staticTint.strong,
+);
+
+console.log('\n[5] 每个变量都必须在深浅两套里都有定义');
 const coverage = await page.evaluate(() => {
   const wanted = [
     'ink-rgb', 'ink-soft-rgb', 'ink-mute-rgb', 'line-rgb', 'canvas-rgb',

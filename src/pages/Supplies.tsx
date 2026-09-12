@@ -159,14 +159,14 @@ export default function Supplies() {
                   <div className="flex gap-0.5">
                     <button
                       type="button"
-                      className="rounded-lg p-1.5 text-ink-mute transition hover:bg-tint-strong hover:text-ink"
+                      className="rounded-lg p-1.5 text-ink-mute transition hover:bg-neutral-tint/25 hover:text-ink"
                       onClick={() => setEditing(supply)}
                     >
                       <Pencil size={13} />
                     </button>
                     <button
                       type="button"
-                      className="rounded-lg p-1.5 text-ink-mute transition hover:bg-danger-50 hover:text-danger-500"
+                      className="rounded-lg p-1.5 text-ink-mute transition hover:bg-danger-tint/25 hover:text-danger-500"
                       onClick={() => removeSupply(supply.id)}
                     >
                       <Trash2 size={13} />

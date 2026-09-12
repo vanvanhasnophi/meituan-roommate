@@ -92,7 +92,7 @@ export default function Expenses() {
           <div className="flex items-center gap-1 rounded-xl border border-line bg-comp p-1">
             <button
               type="button"
-              className="rounded-lg p-1.5 text-ink-mute transition hover:bg-tint-strong"
+              className="rounded-lg p-1.5 text-ink-mute transition hover:bg-neutral-tint/25"
               onClick={() => setMonth((m) => monthKey(addMonths(startOfMonth(`${m}-01`), -1)))}
             >
               <ChevronLeft size={16} />
@@ -100,7 +100,7 @@ export default function Expenses() {
             <span className="num min-w-[86px] text-center text-[13px] font-medium">{monthLabel(month)}</span>
             <button
               type="button"
-              className="rounded-lg p-1.5 text-ink-mute transition hover:bg-tint-strong disabled:opacity-30"
+              className="rounded-lg p-1.5 text-ink-mute transition hover:bg-neutral-tint/25 disabled:opacity-30"
               disabled={isCurrentMonth}
               onClick={() => setMonth((m) => monthKey(addMonths(startOfMonth(`${m}-01`), 1)))}
             >
@@ -350,14 +350,14 @@ export default function Expenses() {
                             <div className="flex gap-1 opacity-0 transition group-hover:opacity-100 sm:opacity-100">
                               <button
                                 type="button"
-                                className="rounded-lg p-1.5 text-ink-mute transition hover:bg-tint-strong hover:text-ink"
+                                className="rounded-lg p-1.5 text-ink-mute transition hover:bg-neutral-tint/25 hover:text-ink"
                                 onClick={() => setEditing(e)}
                               >
                                 <Pencil size={14} />
                               </button>
                               <button
                                 type="button"
-                                className="rounded-lg p-1.5 text-ink-mute transition hover:bg-danger-50 hover:text-danger-500"
+                                className="rounded-lg p-1.5 text-ink-mute transition hover:bg-danger-tint/25 hover:text-danger-500"
                                 onClick={() => removeExpense(e.id)}
                               >
                                 <Trash2 size={14} />
