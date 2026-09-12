@@ -68,6 +68,12 @@ function localPlatformPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [react(), localPlatformPlugin()],
+  // 构建标识：用于在浏览器里一眼分辨当前跑的是哪一版
+  define: {
+    __BUILD_ID__: JSON.stringify(
+      `${new Date().toISOString().slice(0, 16).replace('T', ' ')}`,
+    ),
+  },
   server: {
     port: 5173,
     host: true,

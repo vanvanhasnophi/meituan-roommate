@@ -19,7 +19,8 @@
     "test:all": "npm run lint && npm run test:logic && npm run test:api",
     "test:live": "node test/live.test.mjs",
     "test:colors": "node test/colors.test.mjs",
-    "test:dom": "node test/live.test.mjs"
+    "test:dom": "node test/live.test.mjs",
+    "test:theme": "node test/theme.test.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",
