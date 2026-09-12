@@ -14,7 +14,7 @@ import {
   Users,
 } from 'lucide-react';
 
-import { Card, Chip, SectionHeader, cn } from '../components/ui';
+import { Card, Chip, SectionHeader, cn, tint } from '../components/ui';
 import { useStore } from '../store/useStore';
 
 type Route = 'dashboard' | 'expenses' | 'chores' | 'supplies' | 'pacts' | 'about';
@@ -25,42 +25,42 @@ const PAIN_POINTS = [
     answer: '分摊引擎',
     detail:
       '支持均分 / 按份数 / 自定义金额三种模式；金额按「分」做整数运算，保证每人金额之和恰好等于总额，不会出现差一分钱的糊涂账。',
-    color: '#D4613A',
+    color: 'var(--brand-600)',
   },
   {
     pain: '你欠我、我欠他，一串多角债，转账要转好几轮',
     answer: '最优结算',
     detail:
       '自动计算每人净额，用「最大债权 ↔ 最大债务」贪心配对，把 n 个人的多角债压缩成最多 n−1 笔转账，一键标记已转。',
-    color: '#D99423',
+    color: 'var(--warn-500)',
   },
   {
     pain: '值日表贴在冰箱上，第三天就没人看了',
     answer: '规则化排班',
     detail:
       '不手排日历：只维护「轮值规则 + 锚点」，日历自动生成并可无限延伸。打卡、换班、跳过作为「变更记录」单独存储，规则与事实分离。',
-    color: '#2E8C81',
+    color: 'var(--pos-600)',
   },
   {
     pain: '「打扫干净」各人理解不一致，做完还是被嫌弃',
     answer: '可验收标准',
     detail:
       '每个区域写死完成标准，例如厨房＝台面无油渍、水槽无残渣、灶台擦净、垃圾清空。把形容词变成清单，验收不再靠嗓门。',
-    color: '#7C6BB0',
+    color: 'var(--cat-grocery)',
   },
   {
     pain: '卷纸用完了没人管，临时抓瞎；买了也不好意思要钱',
     answer: '库存 + 自动 AA',
     detail:
       '登记库存与消耗，低于阈值即提醒，还会按近 30 天消耗速率预估「还能用几天」；补货时填入金额，自动生成一笔 AA 账单并关联来源。',
-    color: '#4E8AB8',
+    color: 'var(--cat-internet)',
   },
   {
     pain: '口头约定说变就变，翻旧账时谁也说不清',
     answer: '公约版本化',
     detail:
       '提案 → 全员表决 → 生效 → 修订留痕，每一次内容变化都保留历史版本、修改人与修改原因；违约记录公开但不打分，用于复盘。',
-    color: '#C9483C',
+    color: 'var(--danger-500)',
   },
 ];
 
@@ -139,10 +139,10 @@ export default function About({ onNavigate }: { onNavigate: (r: Route) => void }
           让分摊不用开口催，让值日不用靠自觉，让公约不靠记性。
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Chip className="bg-black/[0.04] text-ink-mute">费用 AA 分摊</Chip>
-          <Chip className="bg-black/[0.04] text-ink-mute">清洁值日排班</Chip>
-          <Chip className="bg-black/[0.04] text-ink-mute">公共物品登记与提醒</Chip>
-          <Chip className="bg-black/[0.04] text-ink-mute">室友公约管理</Chip>
+          <Chip className="bg-tint text-ink-mute">费用 AA 分摊</Chip>
+          <Chip className="bg-tint text-ink-mute">清洁值日排班</Chip>
+          <Chip className="bg-tint text-ink-mute">公共物品登记与提醒</Chip>
+          <Chip className="bg-tint text-ink-mute">室友公约管理</Chip>
         </div>
       </section>
 
@@ -159,7 +159,7 @@ export default function About({ onNavigate }: { onNavigate: (r: Route) => void }
               <div className="flex items-start gap-3">
                 <span
                   className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[13px] font-semibold"
-                  style={{ backgroundColor: `${p.color}14`, color: p.color }}
+                  style={{ backgroundColor: tint(p.color, 14), color: p.color }}
                 >
                   ?
                 </span>
@@ -209,14 +209,14 @@ export default function About({ onNavigate }: { onNavigate: (r: Route) => void }
             );
           })}
 
-          <Card className="card-pad border-accent-300/60 bg-accent-50/50">
+          <Card className="card-pad border-pos-300/60 bg-pos-50/50">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-accent-600">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-comp text-pos-600">
                 <Link2 size={17} />
               </span>
               <h3 className="text-[15px] font-semibold tracking-tight">模块联动</h3>
             </div>
-            <ul className="mt-3 space-y-2 text-[12.5px] leading-relaxed text-accent-700">
+            <ul className="mt-3 space-y-2 text-[12.5px] leading-relaxed text-pos-700">
               <li>🧻 物品补货 → 💰 自动生成 AA 账单 → 📊 计入我的应收应付</li>
               <li>🧽 值日打卡 → 🏆 更新积分榜 → 📌 概览待办实时变化</li>
               <li>📜 公约违约 → 关联到具体条款，形成可复盘的记录</li>
@@ -237,7 +237,7 @@ export default function About({ onNavigate }: { onNavigate: (r: Route) => void }
           {DECISIONS.map((d, i) => (
             <Card key={d.title} className="card-pad">
               <div className="flex items-start gap-3">
-                <span className="num flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-black/[0.04] text-[12.5px] font-semibold text-ink-mute">
+                <span className="num flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-tint text-[12.5px] font-semibold text-ink-mute">
                   {i + 1}
                 </span>
                 <div>
@@ -274,7 +274,7 @@ export default function About({ onNavigate }: { onNavigate: (r: Route) => void }
           </Card>
           <Card className="card-pad">
             <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent-50 text-accent-600">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-pos-50 text-pos-600">
                 <GitBranch size={16} />
               </span>
               <h3 className="text-[14px] font-semibold">服务端</h3>
@@ -295,7 +295,7 @@ export default function About({ onNavigate }: { onNavigate: (r: Route) => void }
             </div>
             <ul className="mt-3 space-y-1.5 text-[12.5px] leading-relaxed text-ink-mute">
               <li>
-                配置 <code className="rounded bg-black/[0.05] px-1">TURSO_DATABASE_URL</code> → 托管 SQLite，
+                配置 <code className="rounded bg-tint-strong px-1">TURSO_DATABASE_URL</code> → 托管 SQLite，
                 线上持久化
               </li>
               <li>本地开发 → 单文件 SQLite（libSQL file: 协议）</li>
@@ -306,7 +306,7 @@ export default function About({ onNavigate }: { onNavigate: (r: Route) => void }
               <span
                 className={cn(
                   'h-1.5 w-1.5 rounded-full',
-                  driver === 'libsql' ? 'bg-accent-500' : driver === 'memory' ? 'bg-warn-500' : 'bg-ink-mute',
+                  driver === 'libsql' ? 'bg-pos-500' : driver === 'memory' ? 'bg-warn-500' : 'bg-ink-mute',
                 )}
               />
               <span className="text-[11.5px] text-ink-mute">
@@ -356,7 +356,7 @@ export default function About({ onNavigate }: { onNavigate: (r: Route) => void }
               { r: 'pacts' as Route, t: '室友公约', d: '给待表决的公约投票，切三个身份投满是同意，看它自动生效' },
             ].map((s, i) => (
               <li key={s.t} className="flex items-start gap-3">
-                <span className="num flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-black/[0.04] text-[12px] font-semibold text-ink-mute">
+                <span className="num flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-tint text-[12px] font-semibold text-ink-mute">
                   {i + 1}
                 </span>
                 <div className="flex-1">

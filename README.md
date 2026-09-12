@@ -3,7 +3,7 @@
 > 合租的矛盾大多不来自「人不好」，而来自**信息不对称**：谁垫了钱、谁该值日、卷纸还剩几卷、约定到底是怎么说的。
 > 同屋把这些模糊地带变成清晰、可查、可追溯的事实 —— 让分摊不用开口催，让值日不用靠自觉，让公约不靠记性。
 
-**在线访问：`<你的域名>/room-mate`** ｜ 技术栈：React 18 + TypeScript + Vite + Tailwind ｜ 部署：Vercel（静态站点 + Serverless Function + SQLite）
+**在线访问：`<你的域名>/room-mate`** ｜ 技术栈：React 18 + TypeScript + Vite + Tailwind ｜ 设计语言：Chronicle 玻璃拟态 · 水绿主题 · 深浅双模式 ｜ 部署：Vercel（静态站点 + Serverless Function + SQLite）
 
 ---
 
@@ -54,7 +54,94 @@
 
 ---
 
-## 二、技术架构
+## 二、设计语言：Chronicle 玻璃拟态
+
+界面材质与配色取自 [Chronicle Aurora](https://github.com/) 的玻璃设计语言（`docs/demo-design-language.md`），**只替换材质与配色，布局结构保持 MVP 原样**。
+
+### 1. 主题机制：改 3 个值 + 1 个 accent
+
+全站层级色**不手挑**，而是按同一套百分比公式从三个基础令牌混出来，所以换主题只需要改这几项：
+
+```css
+--bg-base   页面底色        /* 深色 #121212 / 浅色 #f9f9f9 */
+--bg-offset 灰阶偏移量       /* 参与所有混色  #909090 / #aaa   */
+--fg-base   最亮前景         /* 文字基准      #f5f5f5 / #111   */
+--accent    品牌色           /* 水绿 #7FFFD4                    */
+
+/* 派生示例（照抄 Chronicle 公式） */
+--comp-bg:      color-mix(in srgb, var(--bg-offset) 12%, var(--bg-base));
+--app-text-sec: color-mix(in srgb, var(--bg-base) 33.5%, var(--fg-base));
+--border:       color-mix(in srgb, var(--app-text-sec) 20%, transparent);
+```
+
+深色为 Chronicle 原生形态，浅色只是 `:root[data-theme="light"]` 的一层覆盖（并微调 `--blur-alpha` / `--glass-alpha`），公式完全复用。
+
+**文字一律是纯中性灰**（`r = g = b`，不含任何色相），只有品牌色是水绿 —— 文字带色相会削弱可读性、也容易显脏。层级比 Chronicle 默认更紧凑以换取更高对比度：
+
+| 令牌 | 深色 | 浅色 | 对底色对比度（深 / 浅） |
+| --- | --- | --- | --- |
+| `--ink` | `#e7e7e7` | `#1f1f1f` | 15.2:1 / 15.7:1 |
+| `--ink-soft` | `#c3c3c3` | `#494949` | 10.6:1 / 8.6:1 |
+| `--ink-mute` | `#acacac` | `#606060` | 8.3:1 / 6.0:1 |
+
+三者都通过 CSS 变量 + `-rgb` 三元组暴露，所以 `text-ink-mute/70` 这类透明度修饰符也能随主题自动翻转。
+
+### 2. 水绿主题与浅色可读性
+
+品牌基色是水绿 `#7FFFD4`（`hsl(160 100% 75%)`）。它在深色底上对比度极高，但在浅色底上只有约 1.2:1，完全不可读。因此：
+
+| 令牌 | 深色 | 浅色 | 用途 |
+| --- | --- | --- | --- |
+| `--accent-vivid` | `#7fffd4` | `#7fffd4` | 品牌本色，仅用于氛围底/装饰 |
+| `--accent` | `#7fffd4` | `#0a7d52` | 文字与图标（浅色下压暗到 **4.5:1**） |
+| `--accent-btn` / `--accent-btn-fg` | 水绿底 + 墨绿字 | 深水绿底 + 白字 | 主按钮（13.5:1 / 7.5:1） |
+
+> 深色下主按钮是**水绿底 + 深墨绿字**，而不是白字 —— 白字压在亮水绿上只有约 2:1，会糊。
+
+### 3. 全色系收敛到水绿家族
+
+初版曾保留橘色品牌色与暖色分类色，现已**全部移除**：账单类别、值日区域、公约类别、室友标识的色相全部落在 **132°–205°**（春绿 → 水绿 → 水蓝）区间内，靠色相与明度区分。警示色也从琥珀橘(38°)移到春绿端(140°)，靠图标与文案承担「需要注意」的表达；只有真正的错误态保留绯红(352°)。
+
+每一条文字/数据色都经过 **WCAG AA 对比度求解**：明度不是手写的，而是按目标对比度反解出来的（详见下方「配色生成器」）。
+
+### 4. 玻璃材质
+
+```css
+/* 卡片：半透明表面 + 1px 低对比细线 + 顶部内高光 + 轻投影 */
+.card { background: var(--glass); border: 1px solid var(--line-blur);
+        box-shadow: var(--glass-inner), var(--shadow-1); }
+
+/* 导航 / 侧栏 / 弹层：backdrop-filter blur(16px) */
+.glass-blur  { background: var(--glass-blur); backdrop-filter: blur(16px); }
+.glass-panel { /* 弹层 */ }
+.glass-pop   { /* 下拉浮层 */ }
+```
+
+**刻意不用** Chronicle 的两个可选交互修饰符：
+
+- `.glowable` → `--card-glow` 彩色发光
+- `.scalable` → `transform: scale(1.02)`
+
+悬停反馈只保留「底色提亮 + 投影升一档」（`.interactive`），交互更安静，也不触发重绘。卡片不使用 `backdrop-filter`（只有导航/弹层用），避免移动端大面积模糊带来的掉帧。
+
+### 5. 深浅双模式
+
+- 首次访问**跟随系统** `prefers-color-scheme`；用户点击顶栏切换按钮后写入 `localStorage`
+- `index.html` 内联脚本在首帧前设置 `<html data-theme>`，**无闪白**
+- 深色底为**纯色 `#121212`**（`--app-wash: none`），不使用任何渐变；浅色底保留一层极淡水绿氛围，让玻璃有层次可透
+- 组件样式几乎不需要 `dark:` 变体 —— 令牌自动翻转
+
+### 6. 配色生成器
+
+```bash
+npm run gen:tokens   # → src/tokens.generated.css，并打印全量对比度自检
+```
+
+`scripts/gen-palette.mjs` 按公式计算两个模式的全部令牌，对每个色相**反解出满足目标对比度的明度**（深色 7:1 / 浅色 4.6:1），输出前逐条校验 WCAG AA。当前 66 项检查全部通过。
+
+---
+
+## 三、技术架构
 
 ```
 浏览器（React SPA，挂在 /room-mate 下，hash 路由）

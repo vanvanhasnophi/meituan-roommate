@@ -33,7 +33,7 @@ import {
 } from '../../shared/logic';
 import { EXPENSE_CATEGORIES, SPLIT_MODES } from '../../shared/meta';
 import type { Expense, ExpenseCategory, ID, SplitMode } from '../../shared/types';
-import { Avatar, Button, Card, Chip, EmptyState, Field, Input, MemberPill, Modal, Progress, SectionHeader, Segmented, Textarea, cn } from '../components/ui';
+import { Avatar, Button, Card, Chip, EmptyState, Field, Input, MemberPill, Modal, Progress, SectionHeader, Segmented, Textarea, cn, tint } from '../components/ui';
 import { useStore } from '../store/useStore';
 
 const CATEGORY_KEYS = Object.keys(EXPENSE_CATEGORIES) as ExpenseCategory[];
@@ -89,10 +89,10 @@ export default function Expenses() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 rounded-xl border border-line bg-white p-1">
+          <div className="flex items-center gap-1 rounded-xl border border-line bg-comp p-1">
             <button
               type="button"
-              className="rounded-lg p-1.5 text-ink-mute transition hover:bg-black/[0.05]"
+              className="rounded-lg p-1.5 text-ink-mute transition hover:bg-tint-strong"
               onClick={() => setMonth((m) => monthKey(addMonths(startOfMonth(`${m}-01`), -1)))}
             >
               <ChevronLeft size={16} />
@@ -100,7 +100,7 @@ export default function Expenses() {
             <span className="num min-w-[86px] text-center text-[13px] font-medium">{monthLabel(month)}</span>
             <button
               type="button"
-              className="rounded-lg p-1.5 text-ink-mute transition hover:bg-black/[0.05] disabled:opacity-30"
+              className="rounded-lg p-1.5 text-ink-mute transition hover:bg-tint-strong disabled:opacity-30"
               disabled={isCurrentMonth}
               onClick={() => setMonth((m) => monthKey(addMonths(startOfMonth(`${m}-01`), 1)))}
             >
@@ -129,7 +129,7 @@ export default function Expenses() {
         </Card>
         <Card className="card-pad">
           <span className="text-[13px] font-medium text-ink-mute">我垫付</span>
-          <div className="num mt-2 text-2xl font-semibold tracking-tight text-accent-600">{formatMoney(view.my.paid)}</div>
+          <div className="num mt-2 text-2xl font-semibold tracking-tight text-pos-600">{formatMoney(view.my.paid)}</div>
           <p className="mt-1 text-[12.5px] text-ink-mute">我该承担 {formatMoney(view.my.owed)}</p>
         </Card>
         <Card className="card-pad">
@@ -137,7 +137,7 @@ export default function Expenses() {
           <div
             className={cn(
               'num mt-2 text-2xl font-semibold tracking-tight',
-              view.my.net >= 0 ? 'text-accent-600' : 'text-brand-600',
+              view.my.net >= 0 ? 'text-pos-600' : 'text-brand-600',
             )}
           >
             {formatMoney(Math.abs(view.my.net))}
@@ -153,10 +153,10 @@ export default function Expenses() {
             title="最优结算方案"
             subtitle="多角债务自动压缩，只保留最少转账笔数"
             icon={<HandCoins size={17} />}
-            action={<Chip className="bg-black/[0.04] text-ink-mute">{view.plan.length} 笔转账</Chip>}
+            action={<Chip className="bg-tint text-ink-mute">{view.plan.length} 笔转账</Chip>}
           />
           {view.plan.length === 0 ? (
-            <p className="rounded-xl bg-accent-50 px-3 py-5 text-center text-[13.5px] text-accent-700">
+            <p className="rounded-xl bg-pos-50 px-3 py-5 text-center text-[13.5px] text-pos-700">
               本期账目已平，谁都不欠谁 🎉
             </p>
           ) : (
@@ -166,12 +166,12 @@ export default function Expenses() {
                 const to = memberById(state, t.toId);
                 const mine = t.fromId === me?.id;
                 return (
-                  <div key={`${t.fromId}-${t.toId}-${i}`} className="flex items-center gap-2.5 rounded-xl border border-line bg-white px-3 py-2.5">
+                  <div key={`${t.fromId}-${t.toId}-${i}`} className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-xl border border-line bg-comp px-3 py-2.5">
                     <Avatar member={from} size="sm" />
-                    <span className="text-[13.5px] font-medium">{from?.name}</span>
-                    <ArrowRight size={14} className="text-ink-mute" />
+                    <span className="min-w-0 truncate text-[13.5px] font-medium">{from?.name}</span>
+                    <ArrowRight size={14} className="shrink-0 text-ink-mute" />
                     <Avatar member={to} size="sm" />
-                    <span className="text-[13.5px] font-medium">{to?.name}</span>
+                    <span className="min-w-0 truncate text-[13.5px] font-medium">{to?.name}</span>
                     <span className="num ml-auto text-[15px] font-semibold text-brand-600">{formatMoney(t.amount)}</span>
                     <Button
                       size="xs"
@@ -199,7 +199,7 @@ export default function Expenses() {
               </div>
               <div className="space-y-1.5">
                 {view.periodSettlements.slice(0, 3).map((s) => (
-                  <div key={s.id} className="flex items-center gap-2 rounded-lg bg-accent-50/70 px-3 py-2 text-[12.5px] text-accent-700">
+                  <div key={s.id} className="flex items-center gap-2 rounded-lg bg-pos-50/70 px-3 py-2 text-[12.5px] text-pos-700">
                     <BadgeCheck size={14} />
                     {memberById(state, s.fromId)?.name} → {memberById(state, s.toId)?.name}
                     <span className="num ml-auto font-medium">{formatMoney(s.amount)}</span>
@@ -214,7 +214,7 @@ export default function Expenses() {
         <Card className="card-pad">
           <SectionHeader title="支出结构" subtitle="看清钱花在哪里，才能谈怎么省" icon={<CircleDollarSign size={17} />} />
           {view.byCategory.length === 0 ? (
-            <p className="rounded-xl bg-black/[0.03] px-3 py-5 text-center text-[13px] text-ink-mute">本月还没有账单</p>
+            <p className="rounded-xl bg-tint px-3 py-5 text-center text-[13px] text-ink-mute">本月还没有账单</p>
           ) : (
             <div className="space-y-3">
               {view.byCategory.map((c) => {
@@ -253,7 +253,7 @@ export default function Expenses() {
                     </span>
                     <span className="num text-[12px] text-ink-mute">垫付 {formatMoney(b.paid)}</span>
                     <span
-                      className={cn('num w-20 text-right text-[13.5px] font-medium', b.net >= 0 ? 'text-accent-600' : 'text-brand-600')}
+                      className={cn('num w-20 text-right text-[13.5px] font-medium', b.net >= 0 ? 'text-pos-600' : 'text-brand-600')}
                     >
                       {formatSigned(b.net)}
                     </span>
@@ -305,11 +305,11 @@ export default function Expenses() {
                     const shares = expenseShares(e);
                     const per = e.splitMode === 'even' ? e.amount / Math.max(1, e.participants.length) : null;
                     return (
-                      <div key={e.id} className="group rounded-2xl border border-line bg-white px-3.5 py-3">
+                      <div key={e.id} className="group rounded-2xl border border-line bg-comp px-3.5 py-3">
                         <div className="flex items-start gap-3">
                           <span
                             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg"
-                            style={{ backgroundColor: `${meta.color}14` }}
+                            style={{ backgroundColor: tint(meta.color, 14) }}
                           >
                             {meta.emoji}
                           </span>
@@ -317,7 +317,7 @@ export default function Expenses() {
                             <div className="flex items-center gap-2">
                               <p className="truncate text-[14.5px] font-medium">{e.title}</p>
                               {e.recurring === 'monthly' ? (
-                                <Chip className="bg-accent-50 text-accent-700">
+                                <Chip className="bg-pos-50 text-pos-700">
                                   <Repeat size={11} /> 每月
                                 </Chip>
                               ) : null}
@@ -335,7 +335,7 @@ export default function Expenses() {
                                 return (
                                   <span
                                     key={p.memberId}
-                                    className="inline-flex items-center gap-1 rounded-full bg-black/[0.035] py-0.5 pl-0.5 pr-2 text-[11.5px] text-ink-soft"
+                                    className="inline-flex items-center gap-1 rounded-full bg-tint py-0.5 pl-0.5 pr-2 text-[11.5px] text-ink-soft"
                                   >
                                     <Avatar member={m} size="xs" />
                                     {m?.name}
@@ -350,7 +350,7 @@ export default function Expenses() {
                             <div className="flex gap-1 opacity-0 transition group-hover:opacity-100 sm:opacity-100">
                               <button
                                 type="button"
-                                className="rounded-lg p-1.5 text-ink-mute transition hover:bg-black/[0.05] hover:text-ink"
+                                className="rounded-lg p-1.5 text-ink-mute transition hover:bg-tint-strong hover:text-ink"
                                 onClick={() => setEditing(e)}
                               >
                                 <Pencil size={14} />
@@ -536,7 +536,7 @@ function ExpenseModal({
                   onClick={() => setCategory(k)}
                   className={cn(
                     'flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[13px] transition',
-                    active ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-line bg-white text-ink-soft hover:border-brand-200',
+                    active ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-line bg-comp text-ink-soft hover:border-brand-200',
                   )}
                 >
                   <span>{meta.emoji}</span>
@@ -563,7 +563,7 @@ function ExpenseModal({
                 onClick={() => setRecurring((v) => !v)}
                 className={cn(
                   'flex shrink-0 items-center gap-1.5 rounded-xl border px-3 text-[13px] transition',
-                  recurring ? 'border-accent-300 bg-accent-50 text-accent-700' : 'border-line bg-white text-ink-mute',
+                  recurring ? 'border-pos-300 bg-pos-50 text-pos-700' : 'border-line bg-comp text-ink-mute',
                 )}
               >
                 <Repeat size={14} /> 每月
@@ -589,7 +589,7 @@ function ExpenseModal({
             {parts.map((p, idx) => {
               const m = state.members.find((x) => x.id === p.memberId);
               return (
-                <div key={p.memberId} className="flex items-center gap-3 rounded-xl border border-line bg-white px-3 py-2">
+                <div key={p.memberId} className="flex items-center gap-3 rounded-xl border border-line bg-comp px-3 py-2">
                   <button
                     type="button"
                     onClick={() =>
@@ -597,7 +597,7 @@ function ExpenseModal({
                     }
                     className={cn(
                       'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[11px] transition',
-                      p.on ? 'border-brand-500 bg-brand-500 text-white' : 'border-line bg-white text-transparent',
+                      p.on ? 'border-brand-500 bg-brand-500 text-[color:var(--accent-btn-fg)]' : 'border-line bg-comp text-transparent',
                     )}
                   >
                     ✓

@@ -33,10 +33,10 @@ import { useStore } from '../store/useStore';
 const EMOJI_CHOICES = ['🧻', '🧴', '🫧', '🗑️', '🧽', '💧', '🧪', '🧼', '🪣', '🧹', '🍚', '🫙', '🧂', '🕯️', '🔋', '💡'];
 
 const LEVEL_STYLE: Record<string, { chip: string; bar: string; label: string }> = {
-  out: { chip: 'bg-danger-50 text-danger-700', bar: '#C9483C', label: '已用完' },
-  due: { chip: 'bg-warn-50 text-warn-700', bar: '#D99423', label: '该更换了' },
-  low: { chip: 'bg-brand-50 text-brand-700', bar: '#D4613A', label: '库存偏低' },
-  ok: { chip: 'bg-accent-50 text-accent-700', bar: '#2E8C81', label: '充足' },
+  out: { chip: 'bg-danger-50 text-danger-700', bar: 'var(--danger-500)', label: '已用完' },
+  due: { chip: 'bg-warn-50 text-warn-700', bar: 'var(--warn-500)', label: '该更换了' },
+  low: { chip: 'bg-brand-50 text-brand-700', bar: 'var(--brand-600)', label: '库存偏低' },
+  ok: { chip: 'bg-pos-50 text-pos-700', bar: 'var(--pos-600)', label: '充足' },
 };
 
 export default function Supplies() {
@@ -84,7 +84,7 @@ export default function Supplies() {
         </Card>
         <Card className="card-pad">
           <span className="text-[13px] font-medium text-ink-mute">需要关注</span>
-          <div className={cn('num mt-2 text-2xl font-semibold tracking-tight', alerts.length > 0 ? 'text-brand-600' : 'text-accent-600')}>
+          <div className={cn('num mt-2 text-2xl font-semibold tracking-tight', alerts.length > 0 ? 'text-brand-600' : 'text-pos-600')}>
             {alerts.length}
           </div>
           <p className="mt-1 text-[12.5px] text-ink-mute">
@@ -144,7 +144,7 @@ export default function Supplies() {
             return (
               <Card key={supply.id} className="card-pad flex flex-col">
                 <div className="flex items-start gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-black/[0.035] text-xl">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-tint text-xl">
                     {supply.emoji}
                   </span>
                   <div className="min-w-0 flex-1">
@@ -159,7 +159,7 @@ export default function Supplies() {
                   <div className="flex gap-0.5">
                     <button
                       type="button"
-                      className="rounded-lg p-1.5 text-ink-mute transition hover:bg-black/[0.05] hover:text-ink"
+                      className="rounded-lg p-1.5 text-ink-mute transition hover:bg-tint-strong hover:text-ink"
                       onClick={() => setEditing(supply)}
                     >
                       <Pencil size={13} />
@@ -230,14 +230,14 @@ export default function Supplies() {
           icon={<History size={17} />}
         />
         {recentLogs.length === 0 ? (
-          <p className="rounded-xl bg-black/[0.03] px-3 py-5 text-center text-[13px] text-ink-mute">还没有记录</p>
+          <p className="rounded-xl bg-tint px-3 py-5 text-center text-[13px] text-ink-mute">还没有记录</p>
         ) : (
           <div className="space-y-1.5">
             {recentLogs.map((log) => {
               const supply = state.supplies.find((s) => s.id === log.supplyId);
               const who = memberById(state, log.memberId);
               return (
-                <div key={log.id} className="flex items-center gap-3 rounded-xl border border-line bg-white px-3 py-2.5">
+                <div key={log.id} className="flex items-center gap-3 rounded-xl border border-line bg-comp px-3 py-2.5">
                   <span className="text-lg">{supply?.emoji ?? '📦'}</span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[13.5px]">
@@ -259,7 +259,7 @@ export default function Supplies() {
                     <span className="num text-[13.5px] font-medium text-brand-600">{formatMoney(log.cost)}</span>
                   ) : null}
                   {log.type === 'restock' && log.cost ? (
-                    <Chip className="bg-accent-50 text-accent-700">已入账</Chip>
+                    <Chip className="bg-pos-50 text-pos-700">已入账</Chip>
                   ) : null}
                 </div>
               );
@@ -367,7 +367,7 @@ function SupplyModal({ supply, onClose }: { supply: Supply | null; onClose: () =
                   onClick={() => setEmoji(e)}
                   className={cn(
                     'flex h-9 w-9 items-center justify-center rounded-xl border text-lg transition',
-                    emoji === e ? 'border-brand-400 bg-brand-50' : 'border-line bg-white hover:border-brand-200',
+                    emoji === e ? 'border-brand-400 bg-brand-50' : 'border-line bg-comp hover:border-brand-200',
                   )}
                 >
                   {e}
@@ -386,7 +386,7 @@ function SupplyModal({ supply, onClose }: { supply: Supply | null; onClose: () =
                 onClick={() => setCategory(c)}
                 className={cn(
                   'rounded-xl border px-3 py-1.5 text-[13px] transition',
-                  category === c ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-line bg-white text-ink-soft hover:border-brand-200',
+                  category === c ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-line bg-comp text-ink-soft hover:border-brand-200',
                 )}
               >
                 {c}
@@ -484,12 +484,12 @@ function RestockModal({ supply, onClose }: { supply: Supply; onClose: () => void
           </Field>
         </div>
 
-        <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-line bg-white px-3 py-2.5">
+        <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-line bg-comp px-3 py-2.5">
           <input
             type="checkbox"
             checked={withExpense}
             onChange={(e) => setWithExpense(e.target.checked)}
-            className="h-4 w-4 accent-[#D4613A]"
+            className="h-4 w-4 accent-[var(--accent)]"
           />
           <span className="text-[13.5px]">生成 AA 账单，由全体室友均摊</span>
         </label>
@@ -503,7 +503,7 @@ function RestockModal({ supply, onClose }: { supply: Supply; onClose: () => void
                 ))}
               </div>
             </Field>
-            <div className="rounded-2xl bg-accent-50 px-4 py-3 text-[12.5px] leading-relaxed text-accent-700">
+            <div className="rounded-2xl bg-pos-50 px-4 py-3 text-[12.5px] leading-relaxed text-pos-700">
               {costNum > 0 ? (
                 <>
                   补货 {qtyNum} {supply.unit}，花费 <span className="num font-semibold">{formatMoney(costNum)}</span>，
@@ -521,7 +521,7 @@ function RestockModal({ supply, onClose }: { supply: Supply; onClose: () => void
           <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="例如：618 囤了一箱" />
         </Field>
 
-        <div className="flex items-start gap-2 rounded-xl bg-black/[0.025] px-3 py-2.5 text-[12px] leading-relaxed text-ink-mute">
+        <div className="flex items-start gap-2 rounded-xl bg-tint px-3 py-2.5 text-[12px] leading-relaxed text-ink-mute">
           <Package size={13} className="mt-0.5 shrink-0" />
           当前库存 {supply.stock} {supply.unit}，补货后为{' '}
           <span className="num font-medium text-ink-soft">
@@ -579,7 +579,7 @@ function ConsumeModal({
               onClick={() => setQty(String(n))}
               className={cn(
                 'flex-1 rounded-xl border py-2 text-[13.5px] transition',
-                qty === String(n) ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-line bg-white text-ink-soft',
+                qty === String(n) ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-line bg-comp text-ink-soft',
               )}
             >
               -{n} {supply.unit}
@@ -599,7 +599,7 @@ function ConsumeModal({
         <div
           className={cn(
             'flex items-center gap-2 rounded-xl px-3 py-2.5 text-[12.5px]',
-            after <= supply.lowStockThreshold ? 'bg-warn-50 text-warn-700' : 'bg-black/[0.025] text-ink-mute',
+            after <= supply.lowStockThreshold ? 'bg-warn-50 text-warn-700' : 'bg-tint text-ink-mute',
           )}
         >
           {after <= supply.lowStockThreshold ? <AlertTriangle size={14} /> : null}

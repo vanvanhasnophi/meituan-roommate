@@ -4,13 +4,13 @@ export const EXPENSE_CATEGORIES: Record<
   ExpenseCategory,
   { label: string; emoji: string; color: string; hint: string }
 > = {
-  rent: { label: '房租', emoji: '🏠', color: '#D4613A', hint: '每月固定，通常按房间面积或均分' },
-  utility: { label: '水电燃气', emoji: '💡', color: '#D99423', hint: '按账单周期录入，人均分摊' },
-  internet: { label: '宽带网费', emoji: '📶', color: '#2E8C81', hint: '包年账单建议按月摊销' },
-  grocery: { label: '食材日用', emoji: '🛒', color: '#7C6BB0', hint: '一起买菜、囤零食' },
-  supply: { label: '公共物品', emoji: '🧻', color: '#4E8AB8', hint: '由物品补货自动生成' },
-  service: { label: '家政维修', emoji: '🧰', color: '#8A7B62', hint: '钟点工、疏通、换锁' },
-  other: { label: '其他', emoji: '📦', color: '#8B8078', hint: '' },
+  rent: { label: '房租', emoji: '🏠', color: 'var(--cat-rent)', hint: '每月固定，通常按房间面积或均分' },
+  utility: { label: '水电燃气', emoji: '💡', color: 'var(--cat-utility)', hint: '按账单周期录入，人均分摊' },
+  internet: { label: '宽带网费', emoji: '📶', color: 'var(--cat-internet)', hint: '包年账单建议按月摊销' },
+  grocery: { label: '食材日用', emoji: '🛒', color: 'var(--cat-grocery)', hint: '一起买菜、囤零食' },
+  supply: { label: '公共物品', emoji: '🧻', color: 'var(--cat-supply)', hint: '由物品补货自动生成' },
+  service: { label: '家政维修', emoji: '🧰', color: 'var(--cat-service)', hint: '钟点工、疏通、换锁' },
+  other: { label: '其他', emoji: '📦', color: 'var(--cat-other)', hint: '' },
 };
 
 export const SPLIT_MODES: Record<SplitMode, { label: string; hint: string }> = {
@@ -24,12 +24,12 @@ export const SUPPLY_CATEGORIES: SupplyCategory[] = ['清洁', '厨房', '日用'
 export const PACT_CATEGORIES: PactCategory[] = ['作息', '卫生', '访客', '费用', '宠物', '其他'];
 
 export const PACT_CATEGORY_STYLE: Record<PactCategory, { color: string; emoji: string }> = {
-  作息: { color: '#7C6BB0', emoji: '🌙' },
-  卫生: { color: '#2E8C81', emoji: '🧽' },
-  访客: { color: '#D4613A', emoji: '🚪' },
-  费用: { color: '#D99423', emoji: '💰' },
-  宠物: { color: '#C9483C', emoji: '🐾' },
-  其他: { color: '#8B8078', emoji: '📌' },
+  作息: { color: 'var(--pact-作息)', emoji: '🌙' },
+  卫生: { color: 'var(--pact-卫生)', emoji: '🧽' },
+  访客: { color: 'var(--pact-访客)', emoji: '🚪' },
+  费用: { color: 'var(--pact-费用)', emoji: '💰' },
+  宠物: { color: 'var(--pact-宠物)', emoji: '🐾' },
+  其他: { color: 'var(--pact-其他)', emoji: '📌' },
 };
 
 /** 默认值日标准 —— 把「干净」这种主观词翻译成可验收的标准，是减少矛盾的关键 */

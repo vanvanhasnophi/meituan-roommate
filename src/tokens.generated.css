@@ -1,0 +1,291 @@
+/* ============================================================
+ * 由 scripts/gen-palette.mjs 生成，请勿手改。
+ * 重新生成：npm run gen:tokens
+ *
+ * 设计语言：Chronicle 玻璃拟态
+ *   · 三灰阶（bg-base / bg-offset / fg-base）+ 单一 accent，其余全部由百分比公式混出
+ *   · accent = 水绿 #7FFFD4；浅色模式压暗至 hsl(160 82% 26%) 以保证文字可读
+ *   · 全部文字/数据色均通过 WCAG AA 对比度校验（见 npm run gen:tokens 输出）
+ * ============================================================ */
+
+:root {
+/* ── 基础令牌：改这 3 个值 + accent 即可换主题 ── */
+  --bg-base: #121212;
+  --bg-offset: #909090;
+  --fg-base: #f5f5f5;
+  --color-scheme: dark;
+
+/* ── 水绿 accent ── */
+  --accent-vivid: #7fffd4; /* 品牌本色，仅用于装饰/大色块 */
+  --accent: #7fffd4; /* 深底上的亮色文字 */
+  --accent-bg: rgba(127, 255, 212, 0.15);
+  --accent-btn: #7fffd4; /* 主按钮底色 */
+  --accent-btn-fg: #04241b; /* 主按钮文字 */
+  --accent-btn-hvr: #89ffd7; /* 主按钮悬停（仅提亮，不做缩放/发光） */
+  --accent-hvr: rgba(127, 255, 212, 0.8);
+
+/* ── 背景层级：offset 掺入 base，百分比越大越亮 ── */
+  --canvas: #121212;
+  --comp-bg: #212121;
+  --comp-bg-alt: #2b2b2b;
+
+/* ── 玻璃材质 ── */
+  --glass-opaque: #4d4d4d;
+  --glass-opaque-hvr: #5e5e5e;
+  --glass-alpha: 50%;
+  --blur-alpha: 90%;
+  --glass: rgba(77, 77, 77, 0.5); /* 卡片/弹层表面 */
+  --glass-hvr: rgba(94, 94, 94, 0.66);
+  --glass-blur: rgba(33, 33, 33, 0.9); /* 导航/侧栏 */
+
+/* ── 文字层级：base 掺入 fg，百分比越大越次要 ── */
+  --ink: #e7e7e7;
+  --ink-soft: #c3c3c3;
+  --ink-mute: #acacac;
+
+/* ── 细线与交互态 ── */
+  --line: rgba(172, 172, 172, 0.24);
+  --line-blur: rgba(144, 144, 144, 0.2);
+  --hover: rgba(144, 144, 144, 0.2);
+  --active: rgba(144, 144, 144, 0.24);
+  --overlay: rgba(0, 0, 0, 0.62); /* 弹层遮罩 */
+  --app-wash: none; /* 深色底用纯色，不加渐变 */
+
+/* ── 轻投影 + 玻璃顶部内高光（Chronicle glass-shadow）── */
+  --shadow-1: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-3: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --glass-inner: inset 0 1.1px 0 -1px rgba(255, 255, 255, 0.55);
+
+/* ── 主色阶：50~300 用于淡色底，400~900 用于文字（深色模式下方向相反）── */
+  --brand-50: #2e403a;
+  --brand-100: #365248;
+  --brand-200: #416c5e;
+  --brand-300: #50907b;
+  --brand-400: #61b89b;
+  --brand-500: #7fffd4;
+  --brand-600: #70dbb7;
+  --brand-700: #77edc6;
+  --brand-900: #8cffd8;
+
+/* ── 正向语义（应收/已结清/生效中）：青蓝 197°，与水绿区分 ── */
+  --pos-50: #2a3a40;
+  --pos-100: #2f4954;
+  --pos-300: #3a6779;
+  --pos-500: #6ac3e7;
+  --pos-600: #84ceeb;
+  --pos-700: #a7dcf1;
+
+/* ── 警示与危险 ── */
+  --warn-50: #2a4232;
+  --warn-300: #2fbc5e;
+  --warn-500: #4ddb7c;
+  --warn-700: #a5e9b9;
+  --danger-50: #412e31;
+  --danger-500: #e87382;
+  --danger-700: #f3a5b0;
+
+/* ── 数据驱动色 ── */
+  --cat-service: #25c545;
+  --cat-rent: #25c367;
+  --cat-utility: #25c27c;
+  --cat-grocery: #25c290;
+  --cat-other: #24bfab;
+  --cat-supply: #27bbcc;
+  --cat-internet: #5db4e0;
+  --chore-1: #25c55b;
+  --chore-2: #25c279;
+  --chore-3: #25c097;
+  --chore-4: #24bdb8;
+  --chore-5: #45b8dc;
+  --pact-作息: #25c555;
+  --pact-卫生: #25c274;
+  --pact-访客: #25c293;
+  --pact-费用: #24bfaf;
+  --pact-宠物: #27bbcc;
+  --pact-其他: #5db4e0;
+  --member-1: #25c36f;
+  --member-2: #25c09c;
+  --member-3: #26bcc7;
+  --member-4: #64b3e1;
+
+/* ── 浅色/深色下的通用语义 ── */
+  --ok: #25c274;
+
+/* ── RGB 三元组：供 Tailwind 的 /alpha 透明度修饰符使用 ── */
+  --canvas-rgb: 18 18 18;
+  --bg-offset-rgb: 144 144 144;
+  --fg-base-rgb: 245 245 245;
+  --ink-rgb: 231 231 231;
+  --ink-soft-rgb: 195 195 195;
+  --ink-mute-rgb: 172 172 172;
+  --line-rgb: 172 172 172;
+  --glass-rgb: 77 77 77;
+  --comp-bg-rgb: 33 33 33;
+  --accent-rgb: 127 255 212;
+  --accent-vivid-rgb: 127 255 212;
+  --brand-50-rgb: 46 64 58;
+  --brand-100-rgb: 54 82 72;
+  --brand-200-rgb: 65 108 94;
+  --brand-300-rgb: 80 144 123;
+  --brand-400-rgb: 97 184 155;
+  --brand-500-rgb: 127 255 212;
+  --brand-600-rgb: 112 219 183;
+  --brand-700-rgb: 119 237 198;
+  --brand-900-rgb: 140 255 216;
+  --pos-50-rgb: 42 58 64;
+  --pos-100-rgb: 47 73 84;
+  --pos-300-rgb: 58 103 121;
+  --pos-500-rgb: 106 195 231;
+  --pos-600-rgb: 132 206 235;
+  --pos-700-rgb: 167 220 241;
+  --warn-50-rgb: 42 66 50;
+  --warn-300-rgb: 47 188 94;
+  --warn-500-rgb: 77 219 124;
+  --warn-700-rgb: 165 233 185;
+  --danger-50-rgb: 65 46 49;
+  --danger-500-rgb: 232 115 130;
+  --danger-700-rgb: 243 165 176;
+}
+
+:root[data-theme="light"] {
+/* ── 基础令牌：改这 3 个值 + accent 即可换主题 ── */
+  --bg-base: #f9f9f9;
+  --bg-offset: #aaaaaa;
+  --fg-base: #111111;
+  --color-scheme: light;
+
+/* ── 水绿 accent ── */
+  --accent-vivid: #7fffd4; /* 品牌本色，仅用于装饰/大色块 */
+  --accent: #0c7954; /* 压暗后用于文字（对底色 4.5:1） */
+  --accent-bg: rgba(12, 121, 84, 0.15);
+  --accent-btn: #0a6143; /* 主按钮底色 */
+  --accent-btn-fg: #ffffff; /* 主按钮文字 */
+  --accent-btn-hvr: #0b6e4c; /* 主按钮悬停（仅提亮，不做缩放/发光） */
+  --accent-hvr: rgba(12, 121, 84, 0.8);
+
+/* ── 背景层级：offset 掺入 base，百分比越大越亮 ── */
+  --canvas: #f9f9f9;
+  --comp-bg: #f0f0f0;
+  --comp-bg-alt: #e9e9e9;
+
+/* ── 玻璃材质 ── */
+  --glass-opaque: #f1f1f1;
+  --glass-opaque-hvr: #e8e8e8;
+  --glass-alpha: 30%;
+  --blur-alpha: 80%;
+  --glass: rgba(241, 241, 241, 0.3); /* 卡片/弹层表面 */
+  --glass-hvr: rgba(232, 232, 232, 0.46);
+  --glass-blur: rgba(240, 240, 240, 0.8); /* 导航/侧栏 */
+
+/* ── 文字层级：base 掺入 fg，百分比越大越次要 ── */
+  --ink: #1f1f1f;
+  --ink-soft: #494949;
+  --ink-mute: #606060;
+
+/* ── 细线与交互态 ── */
+  --line: rgba(96, 96, 96, 0.3);
+  --line-blur: rgba(17, 17, 17, 0.12);
+  --hover: rgba(170, 170, 170, 0.2);
+  --active: rgba(170, 170, 170, 0.24);
+  --overlay: rgba(17, 17, 17, 0.3); /* 弹层遮罩 */
+  --app-wash: radial-gradient(58rem 38rem at 8% -12%, color-mix(in srgb, var(--accent-vivid) 9%, transparent), transparent 62%), radial-gradient(46rem 34rem at 102% -4%, color-mix(in srgb, var(--pos-500) 6%, transparent), transparent 58%); /* 浅色底的水绿氛围（玻璃需要层次才透得出来） */
+
+/* ── 轻投影 + 玻璃顶部内高光（Chronicle glass-shadow）── */
+  --shadow-1: 0 4px 12px rgba(0, 0, 0, 0.2);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.16);
+  --shadow-3: 0 10px 30px rgba(0, 0, 0, 0.25);
+  --glass-inner: inset 0 1.1px 0 -1px rgba(255, 255, 255, 0.7);
+
+/* ── 主色阶：50~300 用于淡色底，400~900 用于文字（深色模式下方向相反）── */
+  --brand-50: #e8f8f2;
+  --brand-100: #cff2e6;
+  --brand-200: #a9ead4;
+  --brand-300: #71e0bb;
+  --brand-400: #1eb885;
+  --brand-500: #0e9065;
+  --brand-600: #0c7954;
+  --brand-700: #085e41;
+  --brand-900: #063c2a;
+
+/* ── 正向语义（应收/已结清/生效中）：青蓝 197°，与水绿区分 ── */
+  --pos-50: #e6f4f9;
+  --pos-100: #cde9f4;
+  --pos-300: #5cbbe0;
+  --pos-500: #1a789e;
+  --pos-600: #126687;
+  --pos-700: #0e5571;
+
+/* ── 警示与危险 ── */
+  --warn-50: #e5f5ea;
+  --warn-300: #86d5a0;
+  --warn-500: #20793e;
+  --warn-700: #155b2d;
+  --danger-50: #fcedef;
+  --danger-300: #ea8693;
+  --danger-500: #b42236;
+  --danger-700: #8b1828;
+
+/* ── 数据驱动色 ── */
+  --cat-service: #187d2c;
+  --cat-rent: #187d42;
+  --cat-utility: #187b4e;
+  --cat-grocery: #177b5b;
+  --cat-other: #177a6d;
+  --cat-supply: #197882;
+  --cat-internet: #1e739e;
+  --chore-1: #187d39;
+  --chore-2: #187b4d;
+  --chore-3: #177b60;
+  --chore-4: #177875;
+  --chore-5: #1c7591;
+  --pact-作息: #187d36;
+  --pact-卫生: #187b49;
+  --pact-访客: #177b5d;
+  --pact-费用: #177a70;
+  --pact-宠物: #197882;
+  --pact-其他: #1e739e;
+  --member-1: #187b46;
+  --member-2: #177b63;
+  --member-3: #18787e;
+  --member-4: #1f72a3;
+
+/* ── 浅色/深色下的通用语义 ── */
+  --ok: #187b49;
+
+/* ── RGB 三元组：供 Tailwind 的 /alpha 透明度修饰符使用 ── */
+  --canvas-rgb: 249 249 249;
+  --bg-offset-rgb: 170 170 170;
+  --fg-base-rgb: 17 17 17;
+  --ink-rgb: 31 31 31;
+  --ink-soft-rgb: 73 73 73;
+  --ink-mute-rgb: 96 96 96;
+  --line-rgb: 96 96 96;
+  --glass-rgb: 241 241 241;
+  --comp-bg-rgb: 240 240 240;
+  --accent-rgb: 12 121 84;
+  --accent-vivid-rgb: 127 255 212;
+  --brand-50-rgb: 232 248 242;
+  --brand-100-rgb: 207 242 230;
+  --brand-200-rgb: 169 234 212;
+  --brand-300-rgb: 113 224 187;
+  --brand-400-rgb: 30 184 133;
+  --brand-500-rgb: 14 144 101;
+  --brand-600-rgb: 12 121 84;
+  --brand-700-rgb: 8 94 65;
+  --brand-900-rgb: 6 60 42;
+  --pos-50-rgb: 230 244 249;
+  --pos-100-rgb: 205 233 244;
+  --pos-300-rgb: 92 187 224;
+  --pos-500-rgb: 26 120 158;
+  --pos-600-rgb: 18 102 135;
+  --pos-700-rgb: 14 85 113;
+  --warn-50-rgb: 229 245 234;
+  --warn-300-rgb: 134 213 160;
+  --warn-500-rgb: 32 121 62;
+  --warn-700-rgb: 21 91 45;
+  --danger-50-rgb: 252 237 239;
+  --danger-300-rgb: 234 134 147;
+  --danger-500-rgb: 180 34 54;
+  --danger-700-rgb: 139 24 40;
+}

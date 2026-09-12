@@ -9,11 +9,14 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "serve:dist": "node scripts/serve-dist.mjs",
+    "gen:tokens": "node scripts/gen-palette.mjs",
     "lint": "tsc --noEmit",
     "test:logic": "esbuild test/logic.test.mjs --bundle --format=esm --platform=node --outfile=.tmp/logic.test.mjs --log-level=warning && node .tmp/logic.test.mjs",
     "test:api": "esbuild test/api.test.mjs --bundle --format=esm --platform=node --outfile=.tmp/api.test.mjs --external:@libsql/client --log-level=warning && node .tmp/api.test.mjs memory",
     "test:ui": "node test/ui.test.mjs",
-    "test:visual": "node test/visual.test.mjs"
+    "test:visual": "node test/visual.test.mjs",
+    "test:audit": "node test/audit.test.mjs",
+    "test:all": "npm run lint && npm run test:logic && npm run test:api"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",

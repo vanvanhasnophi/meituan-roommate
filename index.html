@@ -10,6 +10,26 @@
       content="合租生活管家：账单 AA 自动分摊、清洁值日智能轮班、公共物品库存提醒、室友公约共同表决。让合租少一点摩擦，多一点松弛。"
     />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%A0%3C/text%3E%3C/svg%3E" />
+    <script>
+      /* 首帧前定主题，避免白闪：显式选择 > 系统偏好 > 默认浅色 */
+      (function () {
+        try {
+          var stored = localStorage.getItem('tongwu.theme');
+          var theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+          document.documentElement.setAttribute('data-theme', theme);
+          document.documentElement.style.colorScheme = theme;
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', theme === 'dark' ? '#121212' : '#f9f9f9');
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -3,16 +3,19 @@ import {
   ChevronDown,
   Info,
   LayoutDashboard,
+  Moon,
   Package,
   Receipt,
   RotateCcw,
   ScrollText,
   Sparkles,
+  Sun,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { activeMembers } from '../shared/logic';
 import { Avatar, Chip, cn } from './components/ui';
+import { useTheme } from './lib/theme';
 import About from './pages/About';
 import Chores from './pages/Chores';
 import Dashboard from './pages/Dashboard';
@@ -53,6 +56,7 @@ export default function App() {
   const setCurrentMember = useStore((s) => s.setCurrentMember);
   const resetDemo = useStore((s) => s.resetDemo);
   const dismissToast = useStore((s) => s.dismissToast);
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const [route, setRoute] = useState<Route>(parseHash);
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -82,9 +86,9 @@ export default function App() {
   return (
     <div className="min-h-screen lg:flex">
       {/* 桌面侧栏 */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-line bg-canvas/80 px-4 py-6 backdrop-blur lg:flex">
+      <aside className="glass-blur sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-b-0 border-r px-4 py-6 lg:flex">
         <div className="flex items-center gap-2.5 px-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 text-lg shadow-sm">🏠</span>
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 text-lg shadow-glass">🏠</span>
           <div className="min-w-0">
             <div className="truncate text-[15px] font-semibold tracking-tight">同屋</div>
             <div className="truncate text-[11.5px] text-ink-mute">合租生活管家</div>
@@ -102,7 +106,7 @@ export default function App() {
                 onClick={() => navigate(item.key)}
                 className={cn(
                   'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition',
-                  active ? 'bg-white text-ink shadow-card' : 'text-ink-soft hover:bg-white/70',
+                  active ? 'bg-glass text-ink shadow-glass' : 'text-ink-soft hover:bg-tint',
                 )}
               >
                 <Icon size={18} className={active ? 'text-brand-500' : 'text-ink-mute'} />
@@ -116,12 +120,12 @@ export default function App() {
         </nav>
 
         <div className="mt-auto space-y-3 px-2">
-          <div className="rounded-2xl border border-line bg-white/70 p-3">
+          <div className="rounded-card border border-line-blur bg-glass/70 p-3 shadow-glass">
             <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-ink-mute">
               <span
                 className={cn(
                   'h-1.5 w-1.5 rounded-full',
-                  driver === 'libsql' ? 'bg-accent-500' : driver === 'memory' ? 'bg-warn-500' : 'bg-ink-mute',
+                  driver === 'libsql' ? 'bg-pos-500' : driver === 'memory' ? 'bg-warn-500' : 'bg-ink-mute',
                 )}
               />
               存储：{storageLabel}
@@ -133,7 +137,7 @@ export default function App() {
           <button
             type="button"
             onClick={() => void resetDemo()}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-[12.5px] text-ink-mute transition hover:bg-white/70 hover:text-ink-soft"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-[12.5px] text-ink-mute transition hover:bg-tint hover:text-ink-soft"
           >
             <RotateCcw size={14} /> 重置演示数据
           </button>
@@ -142,13 +146,13 @@ export default function App() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* 顶栏 */}
-        <header className="sticky top-0 z-30 border-b border-line bg-canvas/85 backdrop-blur">
+        <header className="glass-blur sticky top-0 z-30">
           <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3 sm:px-6">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-base lg:hidden">🏠</span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h1 className="truncate text-[15px] font-semibold tracking-tight">{state.name}</h1>
-                <Chip className="hidden bg-black/[0.04] text-ink-mute sm:inline-flex">小屋码 {state.code}</Chip>
+                <Chip className="hidden bg-tint text-ink-mute sm:inline-flex">小屋码 {state.code}</Chip>
               </div>
               <p className="truncate text-[11.5px] text-ink-mute">
                 {state.address || '合租小屋'} · {roommates.length} 位室友
@@ -158,10 +162,20 @@ export default function App() {
 
             <button
               type="button"
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
+              title={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-line bg-comp text-ink-mute transition hover:border-brand-200 hover:text-brand-600"
+            >
+              {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+            </button>
+
+            <button
+              type="button"
               onClick={() => navigate('about')}
               aria-label="产品设计说明"
               className={cn(
-                'flex h-9 w-9 items-center justify-center rounded-full border border-line bg-white text-ink-mute transition hover:border-brand-200 hover:text-brand-600 lg:hidden',
+                'flex h-9 w-9 items-center justify-center rounded-full border border-line bg-comp text-ink-mute transition hover:border-brand-200 hover:text-brand-600 lg:hidden',
                 route === 'about' && 'border-brand-300 text-brand-600',
               )}
             >
@@ -172,7 +186,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setSwitcherOpen((v) => !v)}
-                className="flex items-center gap-2 rounded-full border border-line bg-white py-1 pl-1 pr-2.5 text-sm transition hover:border-brand-200"
+                className="flex items-center gap-2 rounded-full border border-line bg-comp py-1 pl-1 pr-2.5 text-sm transition hover:border-brand-200"
               >
                 <Avatar member={me} size="sm" />
                 <span className="hidden font-medium sm:inline">我是 {me?.name}</span>
@@ -186,7 +200,7 @@ export default function App() {
                     className="fixed inset-0 z-40 cursor-default"
                     onClick={() => setSwitcherOpen(false)}
                   />
-                  <div className="absolute right-0 z-50 mt-2 w-60 animate-scale-in rounded-2xl border border-line bg-white p-2 shadow-pop">
+                  <div className="glass-pop absolute right-0 z-50 mt-2 w-60 animate-fade-in p-2">
                     <p className="px-2 py-1.5 text-[11.5px] text-ink-mute">切换身份，体验不同室友视角</p>
                     {roommates.map((m) => (
                       <button
@@ -199,7 +213,7 @@ export default function App() {
                         }}
                         className={cn(
                           'flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-sm transition',
-                          m.id === me?.id ? 'bg-brand-50 text-brand-700' : 'hover:bg-black/[0.04]',
+                          m.id === me?.id ? 'bg-brand-50 text-brand-700' : 'hover:bg-tint',
                         )}
                       >
                         <Avatar member={m} size="sm" />
@@ -243,7 +257,7 @@ export default function App() {
       </div>
 
       {/* 移动底部导航：5 个核心模块，说明入口放在顶栏 */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-line bg-canvas/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+      <nav className="glass-blur fixed bottom-0 left-0 right-0 z-30 border-b-0 border-t pb-[env(safe-area-inset-bottom)] lg:hidden">
         <div className="mx-auto flex max-w-5xl">
           {NAV.filter((n) => n.key !== 'about').map((item) => {
             const Icon = item.icon;
@@ -269,12 +283,12 @@ export default function App() {
       {/* 轻提示 */}
       {toast ? (
         <div className="pointer-events-none fixed bottom-24 left-0 right-0 z-50 flex justify-center px-4 lg:bottom-8">
-          <div className="pointer-events-auto flex animate-fade-up items-center gap-3 rounded-2xl bg-ink px-4 py-3 text-[13.5px] text-white shadow-pop">
+          <div className="glass-pop pointer-events-auto flex animate-fade-up items-center gap-3 px-4 py-3 text-[13.5px] text-ink">
             <span>{toast.text}</span>
             {toast.action ? (
               <button
                 type="button"
-                className="rounded-lg bg-white/15 px-2.5 py-1 text-[12.5px] font-medium transition hover:bg-white/25"
+                className="rounded-btn border border-brand-300 bg-brand-50 px-2.5 py-1 text-[12.5px] font-medium text-brand-700 transition hover:bg-brand-100"
                 onClick={() => {
                   toast.action?.run();
                   dismissToast();

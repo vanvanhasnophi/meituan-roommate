@@ -28,10 +28,10 @@ import type {
 } from './types';
 
 const MEMBERS: Member[] = [
-  { id: 'm1', name: '林小满', avatar: '🐱', color: '#D4613A', role: 'admin', joinedAt: '2023-09-01' },
-  { id: 'm2', name: '陈屿', avatar: '🐳', color: '#2E8C81', role: 'member', joinedAt: '2023-09-01' },
-  { id: 'm3', name: '周哲', avatar: '🦊', color: '#7C6BB0', role: 'member', joinedAt: '2024-03-15' },
-  { id: 'm4', name: '苏念', avatar: '🐰', color: '#D99423', role: 'member', joinedAt: '2024-11-01' },
+  { id: 'm1', name: '林小满', avatar: '🐱', color: 'var(--member-1)', role: 'admin', joinedAt: '2023-09-01' },
+  { id: 'm2', name: '陈屿', avatar: '🐳', color: 'var(--member-2)', role: 'member', joinedAt: '2023-09-01' },
+  { id: 'm3', name: '周哲', avatar: '🦊', color: 'var(--member-3)', role: 'member', joinedAt: '2024-03-15' },
+  { id: 'm4', name: '苏念', avatar: '🐰', color: 'var(--member-4)', role: 'member', joinedAt: '2024-11-01' },
 ];
 
 function buildChoreTasks(anchor: DateStr): ChoreTask[] {
@@ -59,11 +59,11 @@ function buildChoreTasks(anchor: DateStr): ChoreTask[] {
     };
   };
   return [
-    mk('c1', 3, 'daily', 0, '#4E8AB8'), // 垃圾清运
-    mk('c2', 0, 'weekly', 3, '#D4613A'), // 厨房 周三
-    mk('c3', 1, 'weekly', 6, '#2E8C81'), // 卫生间 周六
-    mk('c4', 2, 'weekly', 0, '#7C6BB0'), // 客厅 周日
-    mk('c5', 4, 'weekly', 4, '#8A7B62'), // 阳台 周四
+    mk('c1', 3, 'daily', 0, 'var(--chore-1)'), // 垃圾清运
+    mk('c2', 0, 'weekly', 3, 'var(--chore-2)'), // 厨房 周三
+    mk('c3', 1, 'weekly', 6, 'var(--chore-3)'), // 卫生间 周六
+    mk('c4', 2, 'weekly', 0, 'var(--chore-4)'), // 客厅 周日
+    mk('c5', 4, 'weekly', 4, 'var(--chore-5)'), // 阳台 周四
   ];
 }
 

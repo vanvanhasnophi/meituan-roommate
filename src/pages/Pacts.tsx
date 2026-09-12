@@ -19,7 +19,7 @@ import { useMemo, useState } from 'react';
 import { friendlyDate, pactProgress, todayStr } from '../../shared/logic';
 import { PACT_CATEGORIES, PACT_CATEGORY_STYLE } from '../../shared/meta';
 import type { PactArticle, PactCategory, VoteValue } from '../../shared/types';
-import { Avatar, Button, Card, Chip, EmptyState, Field, Input, Modal, Progress, Textarea, cn } from '../components/ui';
+import { Avatar, Button, Card, Chip, EmptyState, Field, Input, Modal, Progress, Textarea, cn, tint } from '../components/ui';
 import { useStore } from '../store/useStore';
 
 type Tab = 'active' | 'proposed' | 'all';
@@ -62,7 +62,7 @@ export default function Pacts() {
       <div className="grid grid-cols-3 gap-3">
         <Card className="card-pad">
           <span className="text-[13px] font-medium text-ink-mute">生效中</span>
-          <div className="num mt-2 text-2xl font-semibold tracking-tight text-accent-600">{view.active.length}</div>
+          <div className="num mt-2 text-2xl font-semibold tracking-tight text-pos-600">{view.active.length}</div>
           <p className="mt-1 text-[12.5px] text-ink-mute">全体室友已同意</p>
         </Card>
         <Card className="card-pad">
@@ -81,7 +81,7 @@ export default function Pacts() {
         </Card>
       </div>
 
-      <div className="inline-flex rounded-xl bg-black/[0.045] p-1">
+      <div className="inline-flex rounded-xl bg-tint-strong p-1">
         {(
           [
             { key: 'active' as Tab, label: `生效中 ${view.active.length}` },
@@ -95,7 +95,7 @@ export default function Pacts() {
             onClick={() => setTab(t.key)}
             className={cn(
               'rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition',
-              tab === t.key ? 'bg-white text-ink shadow-sm' : 'text-ink-mute hover:text-ink-soft',
+              tab === t.key ? 'bg-comp text-ink shadow-glass' : 'text-ink-mute hover:text-ink-soft',
             )}
           >
             {t.label}
@@ -127,7 +127,7 @@ export default function Pacts() {
                   <div className="flex items-start gap-3">
                     <span
                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg"
-                      style={{ backgroundColor: `${style.color}14` }}
+                      style={{ backgroundColor: tint(style.color, 14) }}
                     >
                       {style.emoji}
                     </span>
@@ -136,13 +136,13 @@ export default function Pacts() {
                         <h3 className="text-[15.5px] font-semibold tracking-tight">{p.title}</h3>
                         <Chip color={style.color}>{p.category}</Chip>
                         {p.status === 'active' ? (
-                          <Chip className="bg-accent-50 text-accent-700">
+                          <Chip className="bg-pos-50 text-pos-700">
                             <CheckCircle2 size={11} /> 生效中
                           </Chip>
                         ) : p.status === 'proposed' ? (
                           <Chip className="bg-warn-50 text-warn-700">待表决</Chip>
                         ) : (
-                          <Chip className="bg-black/[0.05] text-ink-mute">未通过</Chip>
+                          <Chip className="bg-tint-strong text-ink-mute">未通过</Chip>
                         )}
                         <span className="num text-[11.5px] text-ink-mute">v{p.version}</span>
                       </div>
@@ -160,11 +160,11 @@ export default function Pacts() {
                   </div>
 
                   {/* 表决区 */}
-                  <div className="mt-4 rounded-2xl bg-black/[0.02] px-4 py-3.5">
+                  <div className="mt-4 rounded-2xl bg-tint px-4 py-3.5">
                     <div className="flex items-center gap-3">
                       <Progress
                         value={prog.progress}
-                        color={p.status === 'active' ? '#2E8C81' : '#D99423'}
+                        color={p.status === 'active' ? 'var(--pos-600)' : 'var(--warn-500)'}
                         className="flex-1"
                       />
                       <span className="num shrink-0 text-[12.5px] text-ink-mute">
@@ -184,12 +184,12 @@ export default function Pacts() {
                             className={cn(
                               'inline-flex items-center gap-1 rounded-full py-0.5 pl-0.5 pr-2 text-[11.5px]',
                               v?.vote === 'agree'
-                                ? 'bg-accent-50 text-accent-700'
+                                ? 'bg-pos-50 text-pos-700'
                                 : v?.vote === 'oppose'
                                   ? 'bg-danger-50 text-danger-700'
                                   : v?.vote === 'abstain'
-                                    ? 'bg-black/[0.05] text-ink-mute'
-                                    : 'bg-black/[0.03] text-ink-mute/70',
+                                    ? 'bg-tint-strong text-ink-mute'
+                                    : 'bg-tint text-ink-mute/70',
                             )}
                           >
                             <Avatar member={m} size="xs" />
@@ -363,7 +363,7 @@ function ProposeModal({ onClose }: { onClose: () => void }) {
                   onClick={() => setCategory(c)}
                   className={cn(
                     'flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[13px] transition',
-                    category === c ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-line bg-white text-ink-soft hover:border-brand-200',
+                    category === c ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-line bg-comp text-ink-soft hover:border-brand-200',
                   )}
                 >
                   <span>{style.emoji}</span>
@@ -423,7 +423,7 @@ function ReviseModal({ pact, onClose }: { pact: PactArticle; onClose: () => void
       }
     >
       <div className="space-y-4">
-        <div className="rounded-2xl bg-black/[0.025] px-4 py-3">
+        <div className="rounded-2xl bg-tint px-4 py-3">
           <p className="text-[12px] font-medium text-ink-mute">当前版本 v{pact.version}</p>
           <p className="mt-1 whitespace-pre-line text-[13px] leading-relaxed text-ink-soft">{pact.content}</p>
         </div>
@@ -481,7 +481,7 @@ function BreachModal({
                 onClick={() => setMemberId(m.id)}
                 className={cn(
                   'flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-[13px] transition',
-                  memberId === m.id ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-line bg-white text-ink-soft',
+                  memberId === m.id ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-line bg-comp text-ink-soft',
                 )}
               >
                 <Avatar member={m} size="sm" />
@@ -498,7 +498,7 @@ function BreachModal({
             placeholder="例如：朋友临时来住一晚未提前说，已在群里致歉"
           />
         </Field>
-        <p className="rounded-xl bg-black/[0.025] px-3 py-2.5 text-[12px] leading-relaxed text-ink-mute">
+        <p className="rounded-xl bg-tint px-3 py-2.5 text-[12px] leading-relaxed text-ink-mute">
           公开记录会显示在公约卡片中，所有室友可见。
         </p>
       </div>

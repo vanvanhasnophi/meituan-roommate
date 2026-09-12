@@ -27,7 +27,7 @@ import {
   weekdayOf,
 } from '../../shared/logic';
 import type { ChoreOccurrence } from '../../shared/types';
-import { Avatar, Button, Card, Chip, Modal, Progress, SectionHeader, cn } from '../components/ui';
+import { Avatar, Button, Card, Chip, Modal, Progress, SectionHeader, cn, tint } from '../components/ui';
 import { useStore } from '../store/useStore';
 
 function startOfWeek(dateStr: string): string {
@@ -87,24 +87,24 @@ export default function Chores() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 rounded-xl border border-line bg-white p-1">
+          <div className="flex items-center gap-1 rounded-xl border border-line bg-comp p-1">
             <button
               type="button"
-              className="rounded-lg p-1.5 text-ink-mute transition hover:bg-black/[0.05]"
+              className="rounded-lg p-1.5 text-ink-mute transition hover:bg-tint-strong"
               onClick={() => setWeekStart((w) => addDays(w, -7))}
             >
               <ChevronLeft size={16} />
             </button>
             <button
               type="button"
-              className="rounded-lg px-2 py-1.5 text-[12.5px] font-medium text-ink-soft transition hover:bg-black/[0.05]"
+              className="rounded-lg px-2 py-1.5 text-[12.5px] font-medium text-ink-soft transition hover:bg-tint-strong"
               onClick={() => setWeekStart(startOfWeek(today))}
             >
               回到本周
             </button>
             <button
               type="button"
-              className="rounded-lg p-1.5 text-ink-mute transition hover:bg-black/[0.05]"
+              className="rounded-lg p-1.5 text-ink-mute transition hover:bg-tint-strong"
               onClick={() => setWeekStart((w) => addDays(w, 7))}
             >
               <ChevronRight size={16} />
@@ -124,7 +124,7 @@ export default function Chores() {
             return (
               <Card key={key} className="card-pad border-warn-300/60 bg-warn-50">
                 <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/70 text-warn-700">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-glass/70 text-warn-700">
                     <ArrowLeftRight size={17} />
                   </span>
                   <div className="min-w-0 flex-1">
@@ -151,7 +151,7 @@ export default function Chores() {
           {data.minePending.length > 0 ? (
             <Card className="card-pad border-brand-200 bg-brand-50">
               <div className="flex items-start gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/70 text-brand-600">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-glass/70 text-brand-600">
                   <CalendarCheck size={17} />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -190,7 +190,7 @@ export default function Chores() {
           title={`本周排班 · ${weekStart.slice(5)} ~ ${week[6].slice(5)}`}
           subtitle="点击任意一格可以打卡、跳过或换班"
           icon={<CalendarRange size={17} />}
-          action={<Chip className="bg-black/[0.04] text-ink-mute">{state.choreTasks.filter((t) => t.active).length} 个区域</Chip>}
+          action={<Chip className="bg-tint text-ink-mute">{state.choreTasks.filter((t) => t.active).length} 个区域</Chip>}
         />
         <div className="-mx-1 overflow-x-auto pb-1">
           <div className="grid min-w-[720px] grid-cols-7 gap-2 px-1">
@@ -202,7 +202,7 @@ export default function Chores() {
                   key={date}
                   className={cn(
                     'rounded-2xl border p-2.5 transition',
-                    isToday ? 'border-brand-300 bg-brand-50/70' : past ? 'border-line bg-black/[0.015]' : 'border-line bg-white',
+                    isToday ? 'border-brand-300 bg-brand-50/70' : past ? 'border-line bg-tint' : 'border-line bg-comp',
                   )}
                 >
                   <div className="mb-2 flex items-center justify-between">
@@ -228,12 +228,12 @@ export default function Chores() {
                             className={cn(
                               'w-full rounded-xl border px-2 py-1.5 text-left transition hover:border-brand-300',
                               o.status === 'done'
-                                ? 'border-accent-100 bg-accent-50/70'
+                                ? 'border-pos-100 bg-pos-50/70'
                                 : o.status === 'skipped'
-                                  ? 'border-line bg-black/[0.03]'
+                                  ? 'border-line bg-tint'
                                   : o.swapRequest
                                     ? 'border-warn-300/70 bg-warn-50'
-                                    : 'border-line bg-white',
+                                    : 'border-line bg-comp',
                             )}
                           >
                             <div className="flex items-center gap-1.5">
@@ -271,9 +271,9 @@ export default function Chores() {
           />
           <div className="space-y-3">
             {state.choreTasks.map((t) => (
-              <div key={t.id} className="rounded-2xl border border-line bg-white px-3.5 py-3">
+              <div key={t.id} className="rounded-2xl border border-line bg-comp px-3.5 py-3">
                 <div className="flex items-center gap-2.5">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl text-lg" style={{ backgroundColor: `${t.color}14` }}>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl text-lg" style={{ backgroundColor: tint(t.color, 14) }}>
                     {t.emoji}
                   </span>
                   <div className="min-w-0 flex-1">
@@ -312,7 +312,7 @@ export default function Chores() {
                 <span
                   className={cn(
                     'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[12px] font-semibold',
-                    i === 0 ? 'bg-warn-300/40 text-warn-700' : 'bg-black/[0.04] text-ink-mute',
+                    i === 0 ? 'bg-warn-300/40 text-warn-700' : 'bg-tint text-ink-mute',
                   )}
                 >
                   {i + 1}
@@ -340,9 +340,9 @@ export default function Chores() {
             ))}
           </div>
 
-          <div className="mt-5 rounded-2xl bg-black/[0.025] px-4 py-3">
+          <div className="mt-5 rounded-2xl bg-tint px-4 py-3">
             <p className="flex items-start gap-2 text-[12.5px] leading-relaxed text-ink-soft">
-              <BadgeCheck size={14} className="mt-0.5 shrink-0 text-accent-500" />
+              <BadgeCheck size={14} className="mt-0.5 shrink-0 text-pos-500" />
               连续两周完成率 100% 的室友，可以在「公共物品」里优先选择下次补货的分摊方式
               —— 让付出被看见，比罚款有效。
             </p>
@@ -421,7 +421,7 @@ function ChoreDetailModal({
       subtitle={`${occurrence.date} · ${WEEKDAY_LABELS[weekdayOf(occurrence.date)]}`}
     >
       <div className="space-y-5">
-        <div className="flex items-center gap-3 rounded-2xl border border-line bg-white px-4 py-3">
+        <div className="flex items-center gap-3 rounded-2xl border border-line bg-comp px-4 py-3">
           <Avatar member={who} size="md" />
           <div className="flex-1">
             <p className="text-[14px] font-medium">
@@ -439,7 +439,7 @@ function ChoreDetailModal({
             </p>
           </div>
           <Chip
-            color={occurrence.status === 'done' ? '#2E8C81' : occurrence.status === 'skipped' ? '#8B8078' : overdue ? '#C9483C' : '#D4613A'}
+            color={occurrence.status === 'done' ? 'var(--pos-600)' : occurrence.status === 'skipped' ? 'var(--ink-mute)' : overdue ? 'var(--danger-500)' : 'var(--brand-600)'}
           >
             {occurrence.status === 'done' ? '已完成' : occurrence.status === 'skipped' ? '已跳过' : overdue ? '逾期' : '待完成'}
           </Chip>
@@ -467,7 +467,7 @@ function ChoreDetailModal({
                     key={m.id}
                     type="button"
                     onClick={() => onReassign(m.id)}
-                    className="flex items-center gap-2.5 rounded-xl border border-line bg-white px-3 py-2.5 text-left transition hover:border-brand-300"
+                    className="flex items-center gap-2.5 rounded-xl border border-line bg-comp px-3 py-2.5 text-left transition hover:border-brand-300"
                   >
                     <Avatar member={m} size="sm" />
                     <span className="text-[13.5px] font-medium">{m.name}</span>
@@ -499,7 +499,7 @@ function ChoreDetailModal({
                       <button
                         type="button"
                         onClick={() => onSwap(m.id)}
-                        className="flex flex-1 items-center gap-2 rounded-xl border border-line bg-white px-2.5 py-2 text-left transition hover:border-brand-300"
+                        className="flex flex-1 items-center gap-2 rounded-xl border border-line bg-comp px-2.5 py-2 text-left transition hover:border-brand-300"
                       >
                         <Avatar member={m} size="xs" />
                         <span className="flex-1 truncate text-[12.5px]">{m.name}</span>

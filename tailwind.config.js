@@ -1,85 +1,95 @@
 /** @type {import('tailwindcss').Config} */
+
+/** 主题令牌 → Tailwind 颜色。带 -rgb 三元组的支持 /alpha 透明度修饰符 */
+const solid = (name) => `rgb(var(--${name}-rgb) / <alpha-value>)`;
+/** 令牌本身已是半透明色（如细线、悬停底），默认用原值，只有显式写 /alpha 时才换算 */
+const translucent = (name, triplet) => ({ opacityValue }) =>
+  opacityValue === undefined ? `var(--${name})` : `rgb(var(${triplet}) / ${opacityValue})`;
+
+const scale = (prefix, keys) =>
+  Object.fromEntries(keys.map((k) => [k, solid(`${prefix}-${k}`)]));
+
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
+  // 主题靠 <html data-theme> 切换；绝大多数样式由 CSS 变量自动翻转，
+  // 只有极少数地方才需要 dark: 变体
+  darkMode: ['class', '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
-        canvas: '#FAF7F3',
-        surface: '#FFFFFF',
-        line: '#EDE6DC',
+        /* 基底 */
+        canvas: solid('canvas'),
+        surface: 'var(--glass)',
+        glass: solid('glass'),
+        comp: solid('comp-bg'),
+        line: translucent('line', '--line-rgb'),
+        'line-blur': 'var(--line-blur)',
+        overlay: 'var(--overlay)',
+        /* 交互填充（替代原先的 bg-black/[0.04] 一类硬编码） */
+        tint: translucent('hover', '--bg-offset-rgb'),
+        'tint-strong': translucent('active', '--bg-offset-rgb'),
+        /* 文字三层 */
         ink: {
-          DEFAULT: '#241F1A',
-          soft: '#5C534A',
-          mute: '#8B8078',
+          DEFAULT: solid('ink'),
+          soft: solid('ink-soft'),
+          mute: solid('ink-mute'),
         },
-        brand: {
-          50: '#FDF4EF',
-          100: '#FAE4D9',
-          200: '#F4C7B0',
-          300: '#EDA382',
-          400: '#E37F58',
-          500: '#D4613A',
-          600: '#B94C29',
-          700: '#963C21',
-          800: '#7A331F',
-          900: '#642D1D',
-        },
+        /* 水绿主色阶 */
+        brand: scale('brand', [50, 100, 200, 300, 400, 500, 600, 700, 800, 900]),
+        /* 正向语义（青蓝，与水绿区分） */
+        pos: scale('pos', [50, 100, 200, 300, 400, 500, 600, 700]),
+        /* 警示 / 危险 */
+        warn: scale('warn', [50, 100, 200, 300, 400, 500, 600, 700]),
+        danger: scale('danger', [50, 100, 200, 300, 400, 500, 600, 700]),
+        /* 品牌本色与可读版本 */
         accent: {
-          50: '#EEF7F5',
-          100: '#D5EBE6',
-          300: '#8FC9C0',
-          500: '#2E8C81',
-          600: '#1F7168',
-          700: '#1A5C55',
-        },
-        warn: {
-          50: '#FEF7EC',
-          300: '#F3C77A',
-          500: '#D99423',
-          700: '#9A6712',
-        },
-        danger: {
-          50: '#FDF0EF',
-          300: '#EFA9A2',
-          500: '#C9483C',
-          700: '#9A352C',
+          DEFAULT: 'var(--accent)',
+          vivid: 'var(--accent-vivid)',
+          bg: 'var(--accent-bg)',
         },
       },
       fontFamily: {
-        sans: [
-          'ui-sans-serif',
-          '-apple-system',
-          'BlinkMacSystemFont',
-          '"Segoe UI"',
-          '"PingFang SC"',
-          '"Hiragino Sans GB"',
-          '"Microsoft YaHei"',
-          '"Noto Sans SC"',
-          'sans-serif',
-        ],
+        sans: ['var(--app-font-stack)'],
       },
       borderRadius: {
-        xl: '0.875rem',
-        '2xl': '1.125rem',
-        '3xl': '1.5rem',
+        /* Chronicle 圆角家族：按钮 8 / 标签 6 / 卡片 14 / 弹层 18 */
+        none: '0px',
+        sm: '4px',
+        DEFAULT: '6px',
+        md: '6px',
+        lg: '8px',
+        xl: '8px',
+        '2xl': '14px',
+        '3xl': '18px',
+        btn: '8px',
+        tag: '6px',
+        card: '14px',
+        panel: '18px',
+        full: '9999px',
       },
       boxShadow: {
-        card: '0 1px 2px rgba(36,31,26,0.04), 0 8px 24px -12px rgba(36,31,26,0.12)',
-        pop: '0 12px 40px -12px rgba(36,31,26,0.28)',
+        /* 玻璃 = 顶部内高光 + 轻投影；不要发光 */
+        glass: 'var(--glass-inner), var(--shadow-1)',
+        'glass-hvr': 'var(--glass-inner), var(--shadow-2)',
+        panel: 'var(--shadow-3)',
+        pop: 'var(--glass-inner), var(--shadow-3)',
+      },
+      transitionDuration: {
+        DEFAULT: '200ms',
       },
       keyframes: {
         'fade-up': {
           '0%': { opacity: '0', transform: 'translateY(6px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
-        'scale-in': {
-          '0%': { opacity: '0', transform: 'scale(0.97)' },
-          '100%': { opacity: '1', transform: 'scale(1)' },
+        'fade-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
         },
       },
       animation: {
-        'fade-up': 'fade-up 0.28s ease-out both',
-        'scale-in': 'scale-in 0.18s ease-out both',
+        'fade-up': 'fade-up 0.24s ease-out both',
+        'fade-in': 'fade-in 0.18s ease-out both',
       },
     },
   },

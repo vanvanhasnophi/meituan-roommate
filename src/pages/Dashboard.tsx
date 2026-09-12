@@ -185,7 +185,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
                 <span
                   className={cn(
                     'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl',
-                    t.tone === 'warn' ? 'bg-white/70 text-warn-700' : 'bg-white/70 text-brand-600',
+                    t.tone === 'warn' ? 'bg-glass/70 text-warn-700' : 'bg-glass/70 text-brand-600',
                   )}
                 >
                   <Icon size={17} />
@@ -248,7 +248,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
           />
           <div className="space-y-2">
             {data.todayChores.length === 0 ? (
-              <p className="rounded-xl bg-black/[0.03] px-3 py-6 text-center text-[13px] text-ink-mute">
+              <p className="rounded-xl bg-tint px-3 py-6 text-center text-[13px] text-ink-mute">
                 今天没有固定值日，保持随手清洁就好 ✨
               </p>
             ) : (
@@ -262,10 +262,10 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
                     className={cn(
                       'flex items-center gap-3 rounded-xl border px-3 py-2.5 transition',
                       o.status === 'done'
-                        ? 'border-accent-100 bg-accent-50/60'
+                        ? 'border-pos-100 bg-pos-50/60'
                         : mine
-                          ? 'border-brand-200 bg-white'
-                          : 'border-line bg-white',
+                          ? 'border-brand-200 bg-comp'
+                          : 'border-line bg-comp',
                     )}
                   >
                     <span className="text-lg">{task?.emoji}</span>
@@ -278,7 +278,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
                     </div>
                     <Avatar member={who} size="sm" />
                     {o.status === 'done' ? (
-                      <span className="flex items-center gap-1 text-[12.5px] font-medium text-accent-600">
+                      <span className="flex items-center gap-1 text-[12.5px] font-medium text-pos-600">
                         <CheckCircle2 size={14} /> 已完成
                       </span>
                     ) : o.status === 'skipped' ? (
@@ -309,19 +309,19 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
               </Button>
             }
           />
-          <div className="rounded-2xl bg-gradient-to-br from-brand-50 to-white p-4">
+          <div className="rounded-card border border-line-blur bg-brand-50 p-4">
             <p className="text-[12.5px] text-ink-mute">
               {data.myBalance.net >= 0 ? '本月你垫付多于应付，应收回' : '本月你应付多于垫付，应转出'}
             </p>
             <p
               className={cn(
                 'num mt-1 text-[28px] font-semibold tracking-tight',
-                data.myBalance.net >= 0 ? 'text-accent-600' : 'text-brand-600',
+                data.myBalance.net >= 0 ? 'text-pos-600' : 'text-brand-600',
               )}
             >
               {formatSigned(data.myBalance.net)}
             </p>
-            <div className="mt-3 flex gap-4 text-[12.5px] text-ink-mute">
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-ink-mute">
               <span>
                 我垫付 <span className="num font-medium text-ink-soft">{formatMoney(data.myBalance.paid)}</span>
               </span>
@@ -334,10 +334,10 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
           <div className="mt-4">
             <p className="mb-2 flex items-center gap-1.5 text-[13px] font-medium text-ink-soft">
               <TrendingUp size={14} className="text-brand-500" /> 最优结算方案
-              {data.plan.length > 0 ? <Chip className="bg-black/[0.04] text-ink-mute">只需 {data.plan.length} 笔转账</Chip> : null}
+              {data.plan.length > 0 ? <Chip className="bg-tint text-ink-mute">只需 {data.plan.length} 笔转账</Chip> : null}
             </p>
             {data.plan.length === 0 ? (
-              <p className="rounded-xl bg-accent-50 px-3 py-4 text-center text-[13px] text-accent-700">
+              <p className="rounded-xl bg-pos-50 px-3 py-4 text-center text-[13px] text-pos-700">
                 本期账目已平，谁都不欠谁 🎉
               </p>
             ) : (
@@ -349,13 +349,13 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
                   return (
                     <div
                       key={`${t.fromId}-${t.toId}-${i}`}
-                      className="flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-2 text-[13px]"
+                      className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-line bg-comp px-3 py-2 text-[13px]"
                     >
                       <Avatar member={from} size="xs" />
-                      <span className="font-medium">{from?.name}</span>
-                      <ArrowRight size={13} className="text-ink-mute" />
+                      <span className="min-w-0 truncate font-medium">{from?.name}</span>
+                      <ArrowRight size={13} className="shrink-0 text-ink-mute" />
                       <Avatar member={to} size="xs" />
-                      <span className="font-medium">{to?.name}</span>
+                      <span className="min-w-0 truncate font-medium">{to?.name}</span>
                       <span className="num ml-auto font-semibold text-brand-600">{formatMoney(t.amount)}</span>
                       {involvesMe ? <Chip className="bg-brand-100 text-brand-700">涉及我</Chip> : null}
                     </div>
@@ -384,13 +384,13 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
             }
           />
           {data.alerts.length === 0 ? (
-            <p className="rounded-xl bg-accent-50 px-3 py-4 text-center text-[13px] text-accent-700">
+            <p className="rounded-xl bg-pos-50 px-3 py-4 text-center text-[13px] text-pos-700">
               所有物品库存正常，无需操心 ✅
             </p>
           ) : (
             <div className="space-y-2">
               {data.alerts.slice(0, 4).map((a) => (
-                <div key={a.supply.id} className="flex items-center gap-3 rounded-xl border border-line bg-white px-3 py-2.5">
+                <div key={a.supply.id} className="flex items-center gap-3 rounded-xl border border-line bg-comp px-3 py-2.5">
                   <span className="text-lg">{a.supply.emoji}</span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[14px] font-medium">{a.supply.name}</p>
@@ -401,7 +401,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
                     </p>
                   </div>
                   <Chip
-                    color={a.level === 'out' ? '#C9483C' : a.level === 'due' ? '#D99423' : '#D4613A'}
+                    color={a.level === 'out' ? 'var(--danger-500)' : a.level === 'due' ? 'var(--warn-500)' : 'var(--brand-600)'}
                   >
                     {a.level === 'out' ? '已用完' : a.level === 'due' ? '该更换' : '偏低'}
                   </Chip>
@@ -433,10 +433,10 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
                   <div key={p.id} className="rounded-xl border border-warn-300/60 bg-warn-50 px-3 py-3">
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-[14px] font-medium leading-snug">{p.title}</p>
-                      <Chip className="bg-white/70 text-warn-700">待表决</Chip>
+                      <Chip className="bg-glass/70 text-warn-700">待表决</Chip>
                     </div>
                     <div className="mt-2 flex items-center gap-2">
-                      <Progress value={prog.progress} color="#D99423" className="flex-1" />
+                      <Progress value={prog.progress} color="var(--warn-500)" className="flex-1" />
                       <span className="num text-[12px] text-warn-700">
                         {prog.agree}/{prog.total} 同意
                       </span>
@@ -460,9 +460,9 @@ export default function Dashboard({ onNavigate }: { onNavigate: (r: Route) => vo
               .filter((p) => p.status === 'active')
               .slice(0, 3)
               .map((p) => (
-                <div key={p.id} className="rounded-xl border border-line bg-white px-3 py-2.5">
+                <div key={p.id} className="rounded-xl border border-line bg-comp px-3 py-2.5">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="shrink-0 text-accent-500" />
+                    <CheckCircle2 size={14} className="shrink-0 text-pos-500" />
                     <p className="flex-1 truncate text-[13.5px] font-medium">{p.title}</p>
                     <span className="text-[11.5px] text-ink-mute">v{p.version}</span>
                   </div>
