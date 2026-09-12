@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-canvas text-ink antialiased;
+    font-feature-settings: 'tnum' on, 'lnum' on;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    @apply bg-brand-200 text-brand-900;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line bg-surface shadow-card;
+  }
+
+  .card-pad {
+    @apply p-5 sm:p-6;
+  }
+
+  .label {
+    @apply text-[13px] font-medium text-ink-soft;
+  }
+
+  .field {
+    @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[15px] text-ink
+      outline-none transition placeholder:text-ink-mute/70
+      focus:border-brand-400 focus:ring-4 focus:ring-brand-100;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[15px]
+      font-medium transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-500 text-white shadow-sm hover:bg-brand-600;
+  }
+
+  .btn-ghost {
+    @apply btn border border-line bg-white text-ink-soft hover:border-brand-200 hover:text-brand-600;
+  }
+
+  .btn-quiet {
+    @apply btn text-ink-soft hover:bg-black/[0.04];
+  }
+
+  .btn-xs {
+    @apply rounded-lg px-2.5 py-1.5 text-[13px];
+  }
+
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' on;
+  }
+}
+
+/* 滚动条：桌面端更细腻 */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #e2d9cd;
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #cfc2b1;
+    background-clip: content-box;
+    border: 3px solid transparent;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
